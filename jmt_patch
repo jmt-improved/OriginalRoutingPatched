@@ -1,0 +1,1011 @@
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(working copy)
+@@ -20,7 +20,11 @@
+ 
+ import org.jgraph.graph.Port;
+ 
+- /**
++import java.awt.geom.Point2D;
++import java.util.LinkedList;
++import java.util.List;
++
++/**
+  * It represent a component that switches class of jobs coming into it. 
+  * @author John
+  *
+@@ -54,10 +58,13 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
+-		ports[0] = new InputPort(this);
+-		ports[1] = new OutputPort(this);
++	public List<Port> createPorts() {
++		//Port[] ports = new Port[2];
++		//ports[0] = new InputPort(this);
++		//ports[1] = new OutputPort(this);
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Represents a pure Delay service center
+  *
+@@ -59,10 +62,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
+  *
+@@ -59,10 +62,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java	(working copy)
+@@ -26,8 +26,7 @@
+ import java.awt.font.FontRenderContext;
+ import java.awt.geom.Point2D;
+ import java.awt.geom.Rectangle2D;
+-import java.util.Hashtable;
+-import java.util.Map;
++import java.util.*;
+ 
+ import javax.swing.Icon;
+ import javax.swing.ImageIcon;
+@@ -36,10 +35,7 @@
+ import jmt.gui.common.JMTImageLoader;
+ 
+ import org.jgraph.JGraph;
+-import org.jgraph.graph.DefaultGraphCell;
+-import org.jgraph.graph.DefaultPort;
+-import org.jgraph.graph.GraphConstants;
+-import org.jgraph.graph.Port;
++import org.jgraph.graph.*;
+ 
+ /**
+  * vertex cell for jmt
+@@ -57,6 +53,7 @@
+ 	// Used to determine if parent of this cell has changed (to detect enter and exit from
+ 	// blocking regions)
+ 	private TreeNode parentRef;
++
+ 	/**
+ 	 * Different kind of nodes.
+ 	 */
+@@ -74,12 +71,14 @@
+ 	public static final int PLACE = 11;
+ 	public static final int TRANSITION = 12;
+ 
+-	private Port[] ports;
++	//private Port[] ports;
+ 
++	private List<Port> ports;
++
+ 	// Giuseppe De Cicco & Fabio Granara
+ 	public boolean seen = false;
+-	public int in = 0;
+-	public int out = 0;
++	public int in = 1;
++	public int out = 1;
+ 	public boolean okin = false;
+ 	public boolean okout = false;
+ 	public int sons = 1;
+@@ -86,6 +85,15 @@
+ 	public int type;
+ 	private boolean leftInputCell = true;
+ 
++
++	private double maxInYOffset = -1;
++	private boolean maxInYOffsetSet = false;
++
++	private double maxOutYOffset = -1;
++	private boolean maxOutYOffsetSet = false;
++
++	private double outXOffset = -1;
++
+ 	/**
+ 	 * Tells if this component can be placed on JGraph or has been disabled. This is
+ 	 * useful to load old models with disabled components (like terminals)
+@@ -130,6 +138,18 @@
+ 		out -= 1;
+ 	}
+ 
++	public double getMaxInYOffset() { return maxInYOffset; }
++
++	public void setMaxInYOffset(double v) { if(!maxInYOffsetSet) { maxInYOffset = v; maxInYOffsetSet = true; } }
++
++	public double getMaxOutYOffset() { return maxOutYOffset; }
++
++	public void setMaxOutYOffset(double v) { if(!maxOutYOffsetSet) { maxOutYOffset = v; maxOutYOffsetSet = true; } }
++
++	public int numInEdges() { return in; }
++
++	public int numOutEdges() { return out; }
++
+ 	/**
+ 	 * Returns Cell's real size (this method considers Icon and name size)
+ 	 *
+@@ -158,7 +178,7 @@
+ 	 *
+ 	 * @return array of ports
+ 	 */
+-	public abstract Port[] createPorts();
++	public abstract List<Port> createPorts();
+ 
+ 	/**
+ 	 * Sets all the attributes like background colour, dimensions, port number
+@@ -282,4 +302,11 @@
+ 	 */
+ 	public abstract String getIcon();
+ 
++	public void setOutXOffset(double v) {
++		outXOffset = v;
++	}
++
++	public double getOutXOffset() {
++		return outXOffset;
++	}
+ }
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java	(working copy)
+@@ -27,13 +27,7 @@
+ import org.freehep.graphics2d.VectorGraphics;
+ import org.freehep.graphicsbase.util.export.ExportDialog;
+ import org.jgraph.JGraph;
+-import org.jgraph.graph.BasicMarqueeHandler;
+-import org.jgraph.graph.CellView;
+-import org.jgraph.graph.DefaultCellViewFactory;
+-import org.jgraph.graph.DefaultGraphModel;
+-import org.jgraph.graph.DefaultGraphSelectionModel;
+-import org.jgraph.graph.GraphLayoutCache;
+-import org.jgraph.graph.GraphModel;
++import org.jgraph.graph.*;
+ 
+ /** Jmt version of JGraph.
+ 
+@@ -167,6 +161,24 @@
+ 		return null;
+ 	}
+ 
++	public InputPort getFreeInPortAt(int x, int y) {
++		JmtCell cell = getVertexAt(x, y);
++		for (int i = 0; i < getModel().getChildCount(cell); i++) {
++			Object child = getModel().getChild(cell, i);
++			if (child instanceof InputPort && ((InputPort) child).getEdges().size() == 0) {
++				return (InputPort) child;
++			}
++		}
++		if (cell != null) {
++			InputPort newPort = new InputPort(cell);
++			cell.insert(newPort, cell.getChildCount() - 1);
++			cell.AddIn();
++			getGraphLayoutCache().putMapping(newPort, new PortView(newPort));
++			return newPort;
++		}
++		return null;
++	}
++
+ 	/** Gets the outport port for the cell under Point(x,y)
+ 	 *
+ 	 * @param x  horizontal coordinate
+@@ -242,6 +254,24 @@
+ 		Defaults.save();
+ 	}
+ 
++	public OutputPort getFreeOutPortAt(int x, int y) {
++		JmtCell cell = getVertexAt(x, y);
++		for (int i = 0; i < getModel().getChildCount(cell); i++) {
++			Object child = getModel().getChild(cell, i);
++			if (child instanceof OutputPort && ((OutputPort) child).getEdges().size() == 0) {
++				return (OutputPort) child;
++			}
++		}
++		if (cell != null) {
++			OutputPort newPort = new OutputPort(cell);
++			cell.insert(newPort, cell.getChildCount() - 1);
++			cell.AddOut();
++			getGraphLayoutCache().putMapping(newPort, new PortView(newPort));
++			return newPort;
++		}
++		return null;
++	}
++
+ 	// ------------------------------------------------------------------------------------------
+ 
+ }
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(working copy)
+@@ -18,9 +18,11 @@
+ 
+ package jmt.gui.jsimgraph.JGraphMod;
+ 
++import java.awt.*;
+ import java.awt.geom.Point2D;
+ import java.awt.geom.Rectangle2D;
+-import java.util.ArrayList;
++import java.lang.reflect.InvocationTargetException;
++import java.util.*;
+ import java.util.List;
+ 
+ import org.jgraph.graph.CellView;
+@@ -30,6 +32,7 @@
+ import org.jgraph.graph.GraphConstants;
+ import org.jgraph.graph.PortView;
+ 
++
+ /**
+ 
+  * @author Federico Granata
+@@ -41,6 +44,24 @@
+  */
+ public class JmtRouting implements Edge.Routing {
+ 
++	interface Predicate<T> {
++		boolean evaluate(T v);
++	}
++
++	static <T> Map<Boolean, Collection<T>> partition(Predicate<T> predicate, Collection<T> collection) {
++		Map<Boolean, Collection<T>> result = new HashMap<>();
++		try {
++			result.put(true, collection.getClass().getConstructor().newInstance());
++			result.put(false, collection.getClass().getConstructor().newInstance());
++			for (T v: collection) {
++				result.get(predicate.evaluate(v)).add(v);
++			}
++		} catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
++			e.printStackTrace();
++		}
++		return result;
++	}
++
+ 	private static final long serialVersionUID = 1L;
+ 	private int offset = 15; //offset per il source
+ 	private int offsetTo2 = -15; //offset per il target
+@@ -77,7 +98,7 @@
+ 			int boundTo = (int) (targetBounds.getCenterX() - (targetBounds.getWidth() / 2));
+ 			if (changeoff > 0 && source.isLeftInputCell()) {
+ 				//System.out.println(changeoff);
+-				offset = changeoff + 15;
++	//			offset = changeoff + 15;
+ 			}
+ 			if (!source.isLeftInputCell()) {
+ 				offset = -offset;
+@@ -110,10 +131,10 @@
+ 				}
+ 				if ((((boundTo - boundFrom) > offset * (1.1)) && (offset > 0 && offsetTo2 < 0))
+ 						|| (((boundFrom - boundTo) > (-offset * (1.1))) && (offset < 0 && offsetTo2 > 0))) {
++
+ 					routed = new Point2D[2];
+ 					routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
+ 					routed[1] = new Point2D.Double(routed[0].getX(), to.getY());
+-
+ 				}
+ 				//____________inizio
+ 				else if ((offset < 0 && offsetTo2 < 0)) {
+@@ -188,14 +209,45 @@
+ 				} else {
+ 
+ 					if ((from.getY() + sourceBounds.getHeight() - 4) < (to.getY() - (targetBounds.getHeight() / 2))) {
++						// edge going from right to left circumventing the model on the upper side
+ 						routed = new Point2D[4];
+ 						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
+ 						routed[3] = new Point2D.Double(boundTo + (offsetTo2), to.getY());
+-						double maxY = sourceBounds.getMaxY() + 20;
+-						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
+-						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
++						//double maxY = sourceBounds.getMaxY() + 20;
++						double minY = Math.min(sourceBounds.getMinY() - 30, targetBounds.getMinY() - 36);
++						routed[1] = new Point2D.Double(routed[0].getX(), minY);
++						routed[2] = new Point2D.Double(routed[3].getX(), minY);
++						if (offset > 0) {
++							double x;
++							double left = sourceBounds.getX() - offset - 4;
++							x = Math.min(routed[2].getX(), left);
++							routed[2].setLocation(x, routed[2].getY());
++							routed[3].setLocation(x, routed[3].getY());
++
++							if (from.getY() < to.getY()) {
++								double x2;
++								double right = targetBounds.getX() + targetBounds.getWidth() + 15;
++								x2 = Math.max(routed[0].getX(), right);
++								routed[0].setLocation(x2, routed[0].getY());
++								routed[1].setLocation(x2, routed[1].getY());
++							}
++						} else {
++							double x;
++							double left = sourceBounds.getX() + sourceBounds.getWidth() + 15 + 4;
++							x = Math.max(routed[2].getX(), left);
++							routed[2].setLocation(x, routed[2].getY());
++							routed[3].setLocation(x, routed[3].getY());
++
++							if (from.getY() < to.getY()) {
++								double x2;
++								double left2 = targetBounds.getX() - 15;
++								x2 = Math.min(routed[0].getX(), left2);
++								routed[0].setLocation(x2, routed[0].getY());
++								routed[1].setLocation(x2, routed[1].getY());
++							}
++						}
+ 					} else {
+-
++						// edge going from right to left circumventing the model on the lower side
+ 						routed = new Point2D[4];
+ 						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
+ 						//System.out.println("Differenza "+ (sourceBounds.getMaxY()-(routed[0].getY() + sourceBounds.getBounds().getHeight()+2)));
+@@ -238,18 +290,179 @@
+ 					}
+ 				}
+ 			}
++
++			double startY = from.getY();
++			{
++				// Handle multiple outgoing edges from the same JmtCell
++				Dimension sourceSize = (Dimension) source.getAttributes().get("size");
++
++				List<OutputPort> outPorts = new ArrayList<>();
++				Enumeration ports = source.children();
++
++				while (ports.hasMoreElements()) {
++					Object port = ports.nextElement();
++					if (port instanceof OutputPort) {
++						outPorts.add((OutputPort) port);
++					}
++				}
++
++				if (outPorts.size() == 1) {
++					Point2D.Double offs = (Point2D.Double) (outPorts.get(0).getAttributes().get("offset"));
++					source.setMaxOutYOffset(offs.getY() * 2);
++					source.setOutXOffset(offs.getX());
++				}
++
++				double division = sourceSize.getHeight() / (source.numOutEdges() + 1.0);
++				double divisionOffset = source.getMaxOutYOffset() / (source.numOutEdges() + 1.0);
++
++				Collections.sort(outPorts, new Comparator<OutputPort>() {
++					@Override
++					public int compare(OutputPort o1, OutputPort o2) {
++						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
++						JmtEdge e2 = (JmtEdge) (o2.getEdges().iterator().next());
++
++						JmtCell c1 = (JmtCell) ((InputPort) e1.getTarget()).getParent();
++						JmtCell c2 = (JmtCell) ((InputPort) e2.getTarget()).getParent();
++
++						return (int) Math.ceil(((Rectangle2D) c1.getAttributes().get("bounds")).getMaxY() - ((Rectangle2D) c2.getAttributes().get("bounds")).getMaxY());
++					}
++				});
++
++				// modify X coordinate of points aligned to matching output port in order to avoid overlap of edges going in the same vertical direction
++				double sOutOffsY = -1;
++				for (int index = 0; index < outPorts.size(); index++) {
++					OutputPort outPort = outPorts.get(index);
++					JmtEdge outEdge = (JmtEdge) (outPort.getEdges().iterator().next());
++					JmtCell targetO = (JmtCell) ((InputPort) outEdge.getTarget()).getParent();
++					if (targetO == target) {
++						startY = sourceBounds.getMinY() + (division * (index + 1));
++						routed[0].setLocation(routed[0].getX(), startY);
++						sOutOffsY = divisionOffset * (index + 1);
++					}
++
++					if (outPort.getAttributes().get("offset") != null) {
++						((Point2D.Double) outPort.getAttributes().get("offset")).setLocation(source.getOutXOffset(), divisionOffset * (index + 1));
++					} else {
++						outPort.getAttributes().put("offset", new Point2D.Double(source.getOutXOffset(), divisionOffset * (index + 1)));
++					}
++				}
++
++				if (outPorts.size() > 1) {
++					final double sourceOutOffsetY = sOutOffsY; // resolve stupid constraint on final variables in Java pre-8 "closures"
++					if (routed[1].getY() < routed[0].getY()) {
++						// edge is going up
++						Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
++							@Override
++							public boolean evaluate(OutputPort v) {
++								return ((Point2D.Double) v.getAttributes().get("offset")).getY() <= sourceOutOffsetY;
++							}
++						}, outPorts);
++						routed[0].setLocation(routed[0].getX() + offset * (parts.get(true).size() - 1), routed[0].getY());
++						routed[1].setLocation(routed[0].getX(), routed[1].getY());
++					} else if (routed[1].getY() > routed[0].getY()) {
++						// edge is going down
++						Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
++							@Override
++							public boolean evaluate(OutputPort v) {
++								return ((Point2D.Double) v.getAttributes().get("offset")).getY() >= sourceOutOffsetY;
++							}
++						}, outPorts);
++						routed[0].setLocation(routed[0].getX() + offset * (parts.get(true).size() - 1), routed[0].getY());
++						routed[1].setLocation(routed[0].getX(), routed[1].getY());
++					}
++				}
++ 			}
++
++			double finalY = to.getY();
++			{
++				// Handle multiple incoming edges to the same JmtCell
++				Dimension targetSize = (Dimension) target.getAttributes().get("size");
++
++				List<InputPort> inPorts = new ArrayList<>();
++				Enumeration ports = target.children();
++
++				while (ports.hasMoreElements()) {
++					Object port = ports.nextElement();
++					if (port instanceof InputPort) {
++						inPorts.add((InputPort) port);
++					}
++				}
++
++				if (inPorts.size() == 1) {
++					target.setMaxInYOffset(((Point2D.Double) (inPorts.get(0).getAttributes().get("offset"))).getY() * 2);
++				}
++
++				double division = targetSize.getHeight() / (target.numInEdges() + 1.0);
++				double divisionOffset = target.getMaxInYOffset() / (target.numInEdges() + 1.0);
++
++				Collections.sort(inPorts, new Comparator<InputPort>() {
++					@Override
++					public int compare(InputPort o1, InputPort o2) {
++						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
++						JmtEdge e2 = (JmtEdge) (o2.getEdges().iterator().next());
++
++						JmtCell c1 = (JmtCell) ((OutputPort) e1.getSource()).getParent();
++						JmtCell c2 = (JmtCell) ((OutputPort) e2.getSource()).getParent();
++
++						return (int) Math.ceil(((Rectangle2D) c1.getAttributes().get("bounds")).getMaxY() - ((Rectangle2D) c2.getAttributes().get("bounds")).getMaxY());
++					}
++				});
++
++				double sInOffsY = -1;
++				for (int index = 0; index < inPorts.size(); index++) {
++					InputPort inPort = inPorts.get(index);
++					JmtEdge inEdge = (JmtEdge) (inPort.getEdges().iterator().next());
++					JmtCell sourceI = (JmtCell) ((OutputPort) inEdge.getSource()).getParent();
++					if (sourceI == source) {
++						finalY = targetBounds.getMinY() + (division * (index + 1));
++						routed[routed.length - 1] = new Point2D.Double(routed[routed.length - 1].getX(), finalY);
++						sInOffsY = divisionOffset * (index + 1);
++					}
++
++					if (inPort.getAttributes().get("offset") != null) {
++						((Point2D.Double) inPort.getAttributes().get("offset")).setLocation(0.0, divisionOffset * (index + 1));
++					} else {
++						inPort.getAttributes().put("offset", new Point2D.Double(0.0, divisionOffset * (index + 1)));
++					}
++				}
++
++				if (inPorts.size() > 1) {
++					final double targetInOffsetY = sInOffsY; // resolve stupid constraint on final variables in Java pre-8 "closures"
++					if (routed[routed.length - 1].getY() < routed[routed.length - 2].getY()) {
++						// edge is going up
++						Map<Boolean, Collection<InputPort>> parts = partition(new Predicate<InputPort>() {
++							@Override
++							public boolean evaluate(InputPort v) {
++								return ((Point2D.Double) v.getAttributes().get("offset")).getY() >= targetInOffsetY;
++							}
++						}, inPorts);
++
++						routed[routed.length - 1].setLocation(routed[routed.length - 1].getX() + offset * (parts.get(false).size()), routed[routed.length - 1].getY());
++						routed[routed.length - 2].setLocation(routed[routed.length - 1].getX(), routed[routed.length - 2].getY());
++
++					} else if (routed[routed.length - 1].getY() > routed[routed.length - 2].getY()) {
++						// edge is going down
++						Map<Boolean, Collection<InputPort>> parts = partition(new Predicate<InputPort>() {
++							@Override
++							public boolean evaluate(InputPort v) {
++								return ((Point2D.Double) v.getAttributes().get("offset")).getY() <= targetInOffsetY;
++							}
++						}, inPorts);
++						routed[routed.length - 1].setLocation(routed[routed.length - 1].getX() + offset * (parts.get(false).size()), routed[routed.length - 1].getY());
++						routed[routed.length - 2].setLocation(routed[routed.length - 1].getX(), routed[routed.length - 2].getY());
++					}
++				}
++			}
++
+ 			//Sets add points
+-			list.add(from);
+-			for (Point2D element : routed) {
+-				list.add(element);
+-			}
+-			list.add(to);
++			list.add(new Point2D.Double(from.getX(), startY));
++			Collections.addAll(list, routed);
++			list.add(new Point2D.Double(to.getX(), finalY));
+ 		}
+ 		return list;
+ 	}
+ 
+ 	public int getPreferredLineStyle(EdgeView edgeView) {
+-
+ 		return GraphConstants.STYLE_ORTHOGONAL;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JoinCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JoinCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JoinCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
+  *
+@@ -59,10 +62,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java	(working copy)
+@@ -21,6 +21,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * <p>Title: Logger Cell</p>
+  * <p>Description: </p>
+@@ -51,10 +54,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Place Cell, represents the place of SPN models.
+  *
+@@ -59,10 +62,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java	(working copy)
+@@ -21,6 +21,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * <p>Title: Router Cell</p>
+  * <p>Description: Routes jobs without servicing capability. This special class was introduced
+@@ -60,10 +63,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * @author Vitor S. Lopes
+  * Date: 25-jul-2016
+@@ -57,10 +60,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * @author Vitor S. Lopes
+  * Date: 25-jul-2016
+@@ -57,11 +60,16 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
++
+ 	}
+ 
+ 	/**
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ServerCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/ServerCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ServerCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Queue Cell, represents the default service center of the model.
+  *
+@@ -59,10 +62,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Represents a Sink service center, it used to destroy jobs in open systems
+  *
+@@ -59,9 +62,12 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[1];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[1];
+ 		ports[0] = new InputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
+  *
+@@ -59,9 +62,12 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[1];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[1];
+ 		ports[0] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
+  *
+@@ -58,10 +61,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++	/*	Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java	(working copy)
+@@ -22,6 +22,9 @@
+ 
+ import org.jgraph.graph.Port;
+ 
++import java.util.LinkedList;
++import java.util.List;
++
+ /**
+  * Transition Cell, represents the transition of SPN models.
+  *
+@@ -59,10 +62,14 @@
+ 	 * @return array of ports
+ 	 */
+ 	@Override
+-	public Port[] createPorts() {
+-		Port[] ports = new Port[2];
++	public List<Port> createPorts() {
++		/*Port[] ports = new Port[2];
+ 		ports[0] = new InputPort(this);
+ 		ports[1] = new OutputPort(this);
++		return ports;*/
++		List<Port> ports = new LinkedList<>();
++		ports.add(new InputPort(this));
++		ports.add(new OutputPort(this));
+ 		return ports;
+ 	}
+ 
+Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java	(working copy)
+@@ -64,7 +64,7 @@
+ 	public void handlePress(MouseEvent e) {
+ 		if (!e.isConsumed()) {
+ 			start = mediator.snap(e.getPoint());
+-			firstPort = port = getOutPortViewAt(e.getX(), e.getY());
++			firstPort = port = getFreeOutPortViewAt(e.getX(), e.getY());
+ 			if (firstPort != null) {
+ 				start = mediator.toScreen(firstPort.getLocation(null));
+ 			}
+@@ -113,7 +113,7 @@
+ 	@Override
+ 	public void handleRelease(MouseEvent e) {
+ 		if (e != null && !e.isConsumed()) {
+-			PortView end = getInPortViewAt(e.getX(), e.getY());
++			PortView end = getFreeInPortViewAt(e.getX(), e.getY());
+ 			if (end != null) {
+ 				mediator.connect(start, current, end, firstPort);
+ 				if ((firstPort != null) && ((VertexView) (firstPort.getParentView()) != null)) {
+@@ -133,6 +133,10 @@
+ 		current = null;
+ 	}
+ 
++	private PortView getFreeInPortViewAt(int x, int y) {
++		return mediator.getFreeInPortViewAt(x, y);
++	}
++
+ 	/** gets the first portView of the input port of the cell at position
+ 	 *
+ 	 * @param x
+@@ -153,6 +157,10 @@
+ 		return mediator.getOutPortViewAt(x, y);
+ 	}
+ 
++	protected PortView getFreeOutPortViewAt(int x, int y) {
++		return mediator.getFreeOutPortViewAt(x, y);
++	}
++
+ 	public void overlay(Graphics2D g) {
+ 		if (start != null && current != null) {
+ 			g.draw(new Line2D.Double(start.getX(), start.getY(), current.getX(), current.getY()));
+Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(working copy)
+@@ -1122,8 +1122,15 @@
+ 	 */
+ 	public PortView getInPortViewAt(int x, int y) {
+ 		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getInPortAt(x, y), false);
++
+ 	}
+ 
++	public PortView getFreeInPortViewAt(int x, int y) {
++		InputPort p = graph.getFreeInPortAt(x, y);
++		return (PortView) graph.getGraphLayoutCache().getMapping(p, false);
++
++	}
++
+ 	/** gets the first portView of the output port of the cell at position
+ 	 *
+ 	 * @param x
+@@ -1290,6 +1297,18 @@
+ 
+ 		if (!edges.isEmpty()) {
+ 			// Removes edges from graph
++			for(Object e: edges) {
++				JmtEdge edge = (JmtEdge) e;
++				InputPort targetPort = (InputPort) edge.getTarget();
++				JmtCell target = (JmtCell) targetPort.getParent();
++				target.SubIn();
++				target.remove(targetPort);
++
++				OutputPort sourcePort = (OutputPort) edge.getSource();
++				JmtCell source = (JmtCell) sourcePort.getParent();
++				source.SubOut();
++				source.remove(sourcePort);
++			}
+ 			graphmodel.remove(edges.toArray());
+ 		}
+ 		// Removes cells from graph
+@@ -3349,4 +3368,7 @@
+ 		}
+ 	}
+ 
++	public PortView getFreeOutPortViewAt(int x, int y) {
++		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getFreeOutPortAt(x, y), false);
++	}
+ }
