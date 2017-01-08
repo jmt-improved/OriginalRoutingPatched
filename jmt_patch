@@ -982,26 +982,44 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	/** gets the first portView of the output port of the cell at position
  	 *
  	 * @param x
-@@ -1290,6 +1297,18 @@
- 
- 		if (!edges.isEmpty()) {
+@@ -1292,9 +1299,6 @@
  			// Removes edges from graph
-+			for(Object e: edges) {
-+				JmtEdge edge = (JmtEdge) e;
-+				InputPort targetPort = (InputPort) edge.getTarget();
-+				JmtCell target = (JmtCell) targetPort.getParent();
-+				target.SubIn();
-+				target.remove(targetPort);
-+
-+				OutputPort sourcePort = (OutputPort) edge.getSource();
-+				JmtCell source = (JmtCell) sourcePort.getParent();
-+				source.SubOut();
-+				source.remove(sourcePort);
-+			}
  			graphmodel.remove(edges.toArray());
  		}
- 		// Removes cells from graph
-@@ -3349,4 +3368,7 @@
+-		// Removes cells from graph
+-		graphmodel.remove(cells);
+-
+ 		// Checks if all children of a blocking region have been removed
+ 		Iterator<Object> it = regions.iterator();
+ 		while (it.hasNext()) {
+@@ -1333,10 +1337,26 @@
+ 				model.deleteStation(((CellComponent) ((JmtCell) cell).getUserObject()).getKey());
+ 			} else if (cell instanceof JmtEdge) {
+ 				JmtEdge link = (JmtEdge) cell;
++				InputPort targetPort = (InputPort) link.getTarget();
++				JmtCell target = (JmtCell) targetPort.getParent();
++				if (target.numInEdges() > 1) { // avoids situation in which there are no InputPorts for target
++					target.SubIn();
++					target.remove(targetPort);
++				}
++
++				OutputPort sourcePort = (OutputPort) link.getSource();
++				JmtCell source = (JmtCell) sourcePort.getParent();
++				if (source.numOutEdges() > 1) { // avoids situation in which there are no OutputPorts for target
++					source.SubOut();
++					source.remove(sourcePort);
++				}
+ 				model.setConnected(link.getSourceKey(), link.getTargetKey(), false);
+ 			}
+ 		}
+ 
++		// Removes cells from graph
++		graphmodel.remove(cells);
++
+ 		// If no stations remains gray select and link buttons
+ 		if (graphmodel.getRootCount() == 0) {
+ 			componentBar.clearButtonGroupSelection(0);
+@@ -3349,4 +3369,7 @@
  		}
  	}
  
