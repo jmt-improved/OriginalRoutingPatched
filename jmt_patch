@@ -322,15 +322,28 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  	private static final long serialVersionUID = 1L;
  	private int offset = 15; //offset per il source
  	private int offsetTo2 = -15; //offset per il target
-@@ -77,7 +98,7 @@
+@@ -65,7 +86,7 @@
+ 
+ 			Point2D[] routed;
+ 			int offset = this.offset;
+-			int changeoff = edge.getOffset();
++//			int changeoff = edge.getOffset();
+ 
+ 			int offsetTo2 = this.offsetTo2;
+ 			//int ringOffset=8;
+@@ -75,10 +96,10 @@
+ 			//System.out.println("Punto del from: "+ from.getX()+", punto del bound: "+sourceBounds.getMaxX());
+ 			int boundFrom = (int) (sourceBounds.getCenterX() + (sourceBounds.getWidth() / 2));
  			int boundTo = (int) (targetBounds.getCenterX() - (targetBounds.getWidth() / 2));
- 			if (changeoff > 0 && source.isLeftInputCell()) {
+-			if (changeoff > 0 && source.isLeftInputCell()) {
++/*			if (changeoff > 0 && source.isLeftInputCell()) {
  				//System.out.println(changeoff);
--				offset = changeoff + 15;
-+	//			offset = changeoff + 15;
- 			}
+ 				offset = changeoff + 15;
+-			}
++			}*/
  			if (!source.isLeftInputCell()) {
  				offset = -offset;
+ 				//ringOffset=-ringOffset;
 @@ -110,10 +131,10 @@
  				}
  				if ((((boundTo - boundFrom) > offset * (1.1)) && (offset > 0 && offsetTo2 < 0))
@@ -1044,7 +1057,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +		// Otherwise create a new one
 +		if (targetPort == null) {
 +			targetPort = new InputPort(target);
-+			target.insert(sourcePort, target.getChildCount() - 1);
++			target.insert(targetPort, target.getChildCount() - 1);
 +			target.AddIn();
 +			graph.getGraphLayoutCache().putMapping(targetPort, new PortView(targetPort));
 +		}
@@ -1055,7 +1068,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +		if (model.setConnected(sourceKey, targetKey, true) || forced) {
 +			graph.getModel().insert(insert, viewMap, cs, null, null);
 +			return connection;
-+		} else { // Add failed remove ports if necessary
++		} else { // Add failed, remove ports if necessary
 +			if (source.numOutEdges() > 1) {
 +				source.SubOut();
 +				source.remove(sourcePort);
