@@ -966,7 +966,109 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(working copy)
-@@ -1122,8 +1122,15 @@
+@@ -47,6 +47,7 @@
+ import javax.swing.JFrame;
+ import javax.swing.JOptionPane;
+ 
++import jdk.internal.util.xml.impl.Input;
+ import jmt.framework.gui.components.JMTMenuBar;
+ import jmt.framework.gui.components.JMTToolBar;
+ import jmt.framework.gui.image.ImageLoader;
+@@ -1017,6 +1018,20 @@
+ 			// Visualizes connection only if it can be created into data structure
+ 			if (model.setConnected(sourceKey, targetKey, true)) {
+ 				graph.getModel().insert(insert, viewMap, cs, null, null);
++			} else { // duplicate connection
++				InputPort inputPort = (InputPort) inPort.getCell();
++				JmtCell target = (JmtCell) inputPort.getParent();
++				if (target != null && target.numInEdges() > 1) {
++					target.SubIn();
++					target.remove(inputPort);
++				}
++
++				OutputPort outputPort = (OutputPort) outPort.getCell();
++				JmtCell source = (JmtCell) outputPort.getParent();
++				if (source != null && source.numOutEdges() > 1) {
++					source.SubOut();
++					source.remove(outputPort);
++				}
+ 			}
+ 		}
+ 	}
+@@ -1062,7 +1077,7 @@
+ 		viewMap.put(connection, map);
+ 		Object[] insert = new Object[] { connection };
+ 		ConnectionSet cs = new ConnectionSet();
+-		// Finds sourcePort
++		// Finds free sourcePort
+ 		Iterator it;
+ 		it = source.getChildren().iterator();
+ 		DefaultPort tmpPort, sourcePort, targetPort;
+@@ -1069,27 +1084,53 @@
+ 		sourcePort = null;
+ 		while (it.hasNext()) {
+ 			tmpPort = (DefaultPort) it.next();
+-			if (tmpPort instanceof OutputPort) {
++			if (tmpPort instanceof OutputPort && tmpPort.getEdges().size() == 0) {
+ 				sourcePort = tmpPort;
+ 			}
+ 		}
+-		// Finds targetPort
++
++		// Otherwise create a new one
++		if (sourcePort == null) {
++			sourcePort = new OutputPort(source);
++			source.insert(sourcePort, source.getChildCount() - 1);
++			source.AddOut();
++			graph.getGraphLayoutCache().putMapping(sourcePort, new PortView(sourcePort));
++		}
++
++		// Finds free targetPort
+ 		it = target.getChildren().iterator();
+ 		targetPort = null;
+ 		while (it.hasNext()) {
+ 			tmpPort = (DefaultPort) it.next();
+-			if (tmpPort instanceof InputPort) {
++			if (tmpPort instanceof InputPort && tmpPort.getEdges().size() == 0) {
+ 				targetPort = tmpPort;
+ 			}
+ 		}
+-		if (sourcePort != null && targetPort != null) {
+-			cs.connect(connection, sourcePort, true);
+-			cs.connect(connection, targetPort, false);
+-			// Adds connection to the graph only if it can be created into data structure
+-			if (model.setConnected(sourceKey, targetKey, true) || forced) {
+-				graph.getModel().insert(insert, viewMap, cs, null, null);
+-				return connection;
++
++		// Otherwise create a new one
++		if (targetPort == null) {
++			targetPort = new InputPort(target);
++			target.insert(sourcePort, target.getChildCount() - 1);
++			target.AddIn();
++			graph.getGraphLayoutCache().putMapping(targetPort, new PortView(targetPort));
++		}
++
++		cs.connect(connection, sourcePort, true);
++		cs.connect(connection, targetPort, false);
++		// Adds connection to the graph only if it can be created into data structure
++		if (model.setConnected(sourceKey, targetKey, true) || forced) {
++			graph.getModel().insert(insert, viewMap, cs, null, null);
++			return connection;
++		} else { // Add failed remove ports if necessary
++			if (source.numOutEdges() > 1) {
++				source.SubOut();
++				source.remove(sourcePort);
+ 			}
++
++			if (target.numInEdges() > 1) {
++				target.SubIn();
++				target.remove(targetPort);
++			}
+ 		}
+ 		return null;
+ 	}
+@@ -1122,8 +1163,15 @@
  	 */
  	public PortView getInPortViewAt(int x, int y) {
  		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getInPortAt(x, y), false);
@@ -982,7 +1084,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	/** gets the first portView of the output port of the cell at position
  	 *
  	 * @param x
-@@ -1292,9 +1299,6 @@
+@@ -1292,9 +1340,6 @@
  			// Removes edges from graph
  			graphmodel.remove(edges.toArray());
  		}
@@ -992,7 +1094,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Checks if all children of a blocking region have been removed
  		Iterator<Object> it = regions.iterator();
  		while (it.hasNext()) {
-@@ -1333,10 +1337,26 @@
+@@ -1333,10 +1378,26 @@
  				model.deleteStation(((CellComponent) ((JmtCell) cell).getUserObject()).getKey());
  			} else if (cell instanceof JmtEdge) {
  				JmtEdge link = (JmtEdge) cell;
@@ -1005,7 +1107,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +
 +				OutputPort sourcePort = (OutputPort) link.getSource();
 +				JmtCell source = (JmtCell) sourcePort.getParent();
-+				if (source.numOutEdges() > 1) { // avoids situation in which there are no OutputPorts for target
++				if (source.numOutEdges() > 1) { // avoids situation in which there are no OutputPorts for source
 +					source.SubOut();
 +					source.remove(sourcePort);
 +				}
@@ -1019,7 +1121,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// If no stations remains gray select and link buttons
  		if (graphmodel.getRootCount() == 0) {
  			componentBar.clearButtonGroupSelection(0);
-@@ -3349,4 +3369,7 @@
+@@ -3349,4 +3410,7 @@
  		}
  	}
  
