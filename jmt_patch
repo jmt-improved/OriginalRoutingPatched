@@ -322,7 +322,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  	private static final long serialVersionUID = 1L;
  	private int offset = 15; //offset per il source
  	private int offsetTo2 = -15; //offset per il target
-@@ -65,7 +86,7 @@
+@@ -65,20 +86,20 @@
  
  			Point2D[] routed;
  			int offset = this.offset;
@@ -331,7 +331,11 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  
  			int offsetTo2 = this.offsetTo2;
  			//int ringOffset=8;
-@@ -75,10 +96,10 @@
+-			Rectangle2D sourceBounds = (Rectangle2D) source.getAttributes().get("bounds");
+-			Rectangle2D targetBounds = (Rectangle2D) target.getAttributes().get("bounds");
++			final Rectangle2D sourceBounds = (Rectangle2D) source.getAttributes().get("bounds");
++			final Rectangle2D targetBounds = (Rectangle2D) target.getAttributes().get("bounds");
+ 
  			//System.out.println("Punto del from: "+ from.getX()+", punto del bound: "+sourceBounds.getMaxX());
  			int boundFrom = (int) (sourceBounds.getCenterX() + (sourceBounds.getWidth() / 2));
  			int boundTo = (int) (targetBounds.getCenterX() - (targetBounds.getWidth() / 2));
@@ -406,7 +410,43 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed = new Point2D[4];
  						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
  						//System.out.println("Differenza "+ (sourceBounds.getMaxY()-(routed[0].getY() + sourceBounds.getBounds().getHeight()+2)));
-@@ -238,18 +290,190 @@
+@@ -202,7 +254,34 @@
+ 						routed[3] = new Point2D.Double(boundTo + offsetTo2, to.getY());
+ 						//double maxY = Math.max(routed[0].getY() + sourceBounds.getBounds().getHeight()+2,
+ 						//		routed[3].getY() + targetBounds.getBounds().getHeight()+8);
+-						double maxY = Math.max(sourceBounds.getMaxY() + 20, targetBounds.getMaxY() + 26);
++
++						List<OutputPort> outPorts = new ArrayList<>();
++						Enumeration ports = source.children();
++
++						while (ports.hasMoreElements()) {
++							Object port = ports.nextElement();
++							if (port instanceof OutputPort) {
++								outPorts.add((OutputPort) port);
++							}
++						}
++
++						double maxY;
++						if (outPorts.size() > 1) {
++							Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
++								@Override
++								public boolean evaluate(OutputPort v) {
++									JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++									JmtCell thisTarget = (JmtCell) ((InputPort) e.getTarget()).getParent();
++									Rectangle2D thisTargetBounds = (Rectangle2D) thisTarget.getAttributes().get("bounds");
++									return thisTargetBounds.getX() > targetBounds.getX() && thisTargetBounds.getX() < sourceBounds.getX();
++								}
++							}, outPorts);
++							maxY = Math.max(sourceBounds.getMaxY() + 20 * (parts.get(true).size() + 1), targetBounds.getMaxY() + 26);
++						} else {
++							maxY = Math.max(sourceBounds.getMaxY() + 20, targetBounds.getMaxY() + 26);
++						}
++
++
+ 						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
+ 						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
+ 
+@@ -238,18 +317,190 @@
  					}
  				}
  			}
@@ -998,16 +1038,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.HashMap;
-@@ -47,6 +48,8 @@
- import javax.swing.JFrame;
- import javax.swing.JOptionPane;
- 
-+import jdk.internal.util.xml.impl.Input;
-+import jmt.commandline.Jmt;
- import jmt.framework.gui.components.JMTMenuBar;
- import jmt.framework.gui.components.JMTToolBar;
- import jmt.framework.gui.image.ImageLoader;
-@@ -1017,6 +1020,20 @@
+@@ -1017,6 +1018,20 @@
  			// Visualizes connection only if it can be created into data structure
  			if (model.setConnected(sourceKey, targetKey, true)) {
  				graph.getModel().insert(insert, viewMap, cs, null, null);
@@ -1028,7 +1059,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			}
  		}
  	}
-@@ -1062,7 +1079,7 @@
+@@ -1062,7 +1077,7 @@
  		viewMap.put(connection, map);
  		Object[] insert = new Object[] { connection };
  		ConnectionSet cs = new ConnectionSet();
@@ -1037,7 +1068,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		Iterator it;
  		it = source.getChildren().iterator();
  		DefaultPort tmpPort, sourcePort, targetPort;
-@@ -1069,27 +1086,53 @@
+@@ -1069,27 +1084,53 @@
  		sourcePort = null;
  		while (it.hasNext()) {
  			tmpPort = (DefaultPort) it.next();
@@ -1101,7 +1132,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  		return null;
  	}
-@@ -1122,8 +1165,15 @@
+@@ -1122,8 +1163,15 @@
  	 */
  	public PortView getInPortViewAt(int x, int y) {
  		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getInPortAt(x, y), false);
@@ -1117,7 +1148,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	/** gets the first portView of the output port of the cell at position
  	 *
  	 * @param x
-@@ -1290,11 +1340,27 @@
+@@ -1290,11 +1338,27 @@
  
  		if (!edges.isEmpty()) {
  			// Removes edges from graph
@@ -1148,7 +1179,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Checks if all children of a blocking region have been removed
  		Iterator<Object> it = regions.iterator();
  		while (it.hasNext()) {
-@@ -1333,10 +1399,30 @@
+@@ -1333,10 +1397,30 @@
  				model.deleteStation(((CellComponent) ((JmtCell) cell).getUserObject()).getKey());
  			} else if (cell instanceof JmtEdge) {
  				JmtEdge link = (JmtEdge) cell;
@@ -1179,7 +1210,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// If no stations remains gray select and link buttons
  		if (graphmodel.getRootCount() == 0) {
  			componentBar.clearButtonGroupSelection(0);
-@@ -3349,4 +3435,7 @@
+@@ -3349,4 +3433,7 @@
  		}
  	}
  
