@@ -485,7 +485,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  				}
  				//____________inizio
  				else if ((offset < 0 && offsetTo2 < 0)) {
-@@ -188,14 +209,45 @@
+@@ -188,14 +209,71 @@
  				} else {
  
  					if ((from.getY() + sourceBounds.getHeight() - 4) < (to.getY() - (targetBounds.getHeight() / 2))) {
@@ -497,7 +497,33 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 -						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
 -						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
 +						//double maxY = sourceBounds.getMaxY() + 20;
-+						double minY = Math.min(sourceBounds.getMinY() - 30, targetBounds.getMinY() - 36);
++
++						List<OutputPort> outPorts = new ArrayList<>();
++						Enumeration ports = source.children();
++
++						while (ports.hasMoreElements()) {
++							Object port = ports.nextElement();
++							if (port instanceof OutputPort) {
++								outPorts.add((OutputPort) port);
++							}
++						}
++
++						double minY;
++						if (outPorts.size() > 1) {
++							Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
++								@Override
++								public boolean evaluate(OutputPort v) {
++									JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++									JmtCell thisTarget = (JmtCell) ((InputPort) e.getTarget()).getParent();
++									Rectangle2D thisTargetBounds = (Rectangle2D) thisTarget.getAttributes().get("bounds");
++									return thisTargetBounds.getX() > targetBounds.getX() && thisTargetBounds.getX() < sourceBounds.getX();
++								}
++							}, outPorts);
++							minY = Math.min(sourceBounds.getMinY() - 30 * (parts.get(true).size() + 1), targetBounds.getMinY() - 30);
++						} else {
++							minY = Math.min(sourceBounds.getMinY() - 30, targetBounds.getMinY() - 36);
++						}
++
 +						routed[1] = new Point2D.Double(routed[0].getX(), minY);
 +						routed[2] = new Point2D.Double(routed[3].getX(), minY);
 +						if (offset > 0) {
@@ -535,7 +561,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed = new Point2D[4];
  						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
  						//System.out.println("Differenza "+ (sourceBounds.getMaxY()-(routed[0].getY() + sourceBounds.getBounds().getHeight()+2)));
-@@ -202,7 +254,34 @@
+@@ -202,7 +280,33 @@
  						routed[3] = new Point2D.Double(boundTo + offsetTo2, to.getY());
  						//double maxY = Math.max(routed[0].getY() + sourceBounds.getBounds().getHeight()+2,
  						//		routed[3].getY() + targetBounds.getBounds().getHeight()+8);
@@ -567,11 +593,10 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +							maxY = Math.max(sourceBounds.getMaxY() + 20, targetBounds.getMaxY() + 26);
 +						}
 +
-+
  						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
  						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
  
-@@ -238,18 +317,190 @@
+@@ -238,18 +342,190 @@
  					}
  				}
  			}
