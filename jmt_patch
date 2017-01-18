@@ -1,3 +1,128 @@
+Index: src/main/java/jmt/gui/common/definitions/CommonModel.java
+===================================================================
+--- src/main/java/jmt/gui/common/definitions/CommonModel.java	(revision 978)
++++ src/main/java/jmt/gui/common/definitions/CommonModel.java	(working copy)
+@@ -3542,9 +3542,12 @@
+ 		/** Reference to owner blocking station or null */
+ 		public Object blockingRegion;
+ 
++		public boolean pinned;
++
+ 		public StationData(String name, String type) {
+ 			this.name = name;
+ 			this.type = type;
++			this.pinned = false;
+ 		}
+ 	}
+ 
+@@ -4053,6 +4056,30 @@
+ 		}
+ 	}
+ 
++	@Override
++	public boolean isPinned(Object stationKey) {
++		StationData sd;
++		if (stationDataHM.containsKey(stationKey)) {
++			sd = (StationData) stationDataHM.get(stationKey);
++		} else {
++			return false;
++		}
++
++		return sd.pinned;
++	}
++
++	@Override
++	public void setIsPinned(Object stationKey, boolean value) {
++		StationData sd;
++		if (stationDataHM.containsKey(stationKey)) {
++			sd = (StationData) stationDataHM.get(stationKey);
++		} else {
++			return;
++		}
++
++		sd.pinned = value;
++	}
++
+ 	/**
+ 	 * Returns given name if a mode with the same name does not exist or makes it unique
+ 	 * for a transition
+Index: src/main/java/jmt/gui/common/definitions/StationDefinition.java
+===================================================================
+--- src/main/java/jmt/gui/common/definitions/StationDefinition.java	(revision 978)
++++ src/main/java/jmt/gui/common/definitions/StationDefinition.java	(working copy)
+@@ -637,4 +637,7 @@
+ 	 */
+ 	public void setFiringOutcome(Object stationKey, int modeIndex, Object stationOutKey, Object classKey, Integer value);
+ 
++	boolean isPinned(Object key);
++
++	void setIsPinned(Object key, boolean value);
+ }
+Index: src/main/java/jmt/gui/common/xml/GuiXMLConstants.java
+===================================================================
+--- src/main/java/jmt/gui/common/xml/GuiXMLConstants.java	(revision 978)
++++ src/main/java/jmt/gui/common/xml/GuiXMLConstants.java	(working copy)
+@@ -41,6 +41,7 @@
+ 	public static final String XML_A_POSITION_X = "x";
+ 	public static final String XML_A_POSITION_Y = "y";
+ 	public static final String XML_A_POSITION_ROTATE = "rotate";
++	public static final String XML_A_PIN = "pin";
+ 
+ 	public static final String XML_E_PARAMETRIC = "parametric";
+ 	public static final String XML_A_PARAMETRIC_CLASSPATH = "classPath";
+Index: src/main/java/jmt/gui/common/xml/GuiXMLReader.java
+===================================================================
+--- src/main/java/jmt/gui/common/xml/GuiXMLReader.java	(revision 978)
++++ src/main/java/jmt/gui/common/xml/GuiXMLReader.java	(working copy)
+@@ -135,6 +135,7 @@
+ 		Element station, position;
+ 		String name;
+ 		double x, y;
++		boolean pinned = false;
+ 		boolean rotate = false;
+ 		// For each stored Station
+ 		for (int i = 0; i < stations.getLength(); i++) {
+@@ -146,11 +147,15 @@
+ 			if (position.hasAttribute(XML_A_POSITION_ROTATE)) {
+ 				rotate = Boolean.TRUE.toString().equalsIgnoreCase(position.getAttribute(XML_A_POSITION_ROTATE));
+ 			}
++			if (position.hasAttribute(XML_A_PIN)) {
++				pinned = Boolean.parseBoolean(position.getAttribute(XML_A_PIN));
++			}
+ 			if (names.containsKey(name)) {
+ 				model.setStationPosition(names.get(name), new JMTPoint(x, y, rotate));
+ 			} else {
+ 				System.out.println("Error - Found position info for station '" + name + "' which is not present into current model.");
+ 			}
++			model.setIsPinned(names.get(name), pinned);
+ 		}
+ 	}
+ 
+Index: src/main/java/jmt/gui/common/xml/GuiXMLWriter.java
+===================================================================
+--- src/main/java/jmt/gui/common/xml/GuiXMLWriter.java	(revision 978)
++++ src/main/java/jmt/gui/common/xml/GuiXMLWriter.java	(working copy)
+@@ -181,6 +181,7 @@
+ 			position.setAttribute(XML_A_POSITION_X, String.valueOf(model.getStationPosition(stationKey).getX()));
+ 			position.setAttribute(XML_A_POSITION_Y, String.valueOf(model.getStationPosition(stationKey).getY()));
+ 			position.setAttribute(XML_A_POSITION_ROTATE, String.valueOf(model.getStationPosition(stationKey).isRotate()));
++			position.setAttribute(XML_A_PIN, String.valueOf(model.isPinned(stations.get(i))));
+ 			station.appendChild(position);
+ 			guiNode.appendChild(station);
+ 		}
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java	(working copy)
+@@ -53,6 +53,8 @@
+ 		return sd.getStationName(key);
+ 	}
+ 
++	public boolean isPinned() { return sd.isPinned(key); }
++
+ 	/**
+ 	 * Returns key referencing this station
+ 	 * @return this station's key
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(revision 978)
@@ -1038,7 +1163,16 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.HashMap;
-@@ -1017,6 +1018,20 @@
+@@ -47,6 +48,8 @@
+ import javax.swing.JFrame;
+ import javax.swing.JOptionPane;
+ 
++import javafx.scene.control.Cell;
++import jmt.commandline.Jmt;
+ import jmt.framework.gui.components.JMTMenuBar;
+ import jmt.framework.gui.components.JMTToolBar;
+ import jmt.framework.gui.image.ImageLoader;
+@@ -1017,6 +1020,20 @@
  			// Visualizes connection only if it can be created into data structure
  			if (model.setConnected(sourceKey, targetKey, true)) {
  				graph.getModel().insert(insert, viewMap, cs, null, null);
@@ -1059,7 +1193,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			}
  		}
  	}
-@@ -1062,7 +1077,7 @@
+@@ -1062,7 +1079,7 @@
  		viewMap.put(connection, map);
  		Object[] insert = new Object[] { connection };
  		ConnectionSet cs = new ConnectionSet();
@@ -1068,7 +1202,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		Iterator it;
  		it = source.getChildren().iterator();
  		DefaultPort tmpPort, sourcePort, targetPort;
-@@ -1069,27 +1084,53 @@
+@@ -1069,27 +1086,53 @@
  		sourcePort = null;
  		while (it.hasNext()) {
  			tmpPort = (DefaultPort) it.next();
@@ -1132,7 +1266,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  		return null;
  	}
-@@ -1122,8 +1163,15 @@
+@@ -1122,8 +1165,15 @@
  	 */
  	public PortView getInPortViewAt(int x, int y) {
  		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getInPortAt(x, y), false);
@@ -1148,7 +1282,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	/** gets the first portView of the output port of the cell at position
  	 *
  	 * @param x
-@@ -1290,11 +1338,27 @@
+@@ -1290,11 +1340,27 @@
  
  		if (!edges.isEmpty()) {
  			// Removes edges from graph
@@ -1179,7 +1313,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Checks if all children of a blocking region have been removed
  		Iterator<Object> it = regions.iterator();
  		while (it.hasNext()) {
-@@ -1333,10 +1397,30 @@
+@@ -1333,10 +1399,30 @@
  				model.deleteStation(((CellComponent) ((JmtCell) cell).getUserObject()).getKey());
  			} else if (cell instanceof JmtEdge) {
  				JmtEdge link = (JmtEdge) cell;
@@ -1210,7 +1344,45 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// If no stations remains gray select and link buttons
  		if (graphmodel.getRootCount() == 0) {
  			componentBar.clearButtonGroupSelection(0);
-@@ -3349,4 +3433,7 @@
+@@ -3089,8 +3175,11 @@
+ 						- (int) (boundspadre.getHeight() / 2) + 30);
+ 			}
+ 
+-			GraphConstants.setBounds(prev.getAttributes(), boundspadre);
+-			x = (int) boundspadre.getCenterX() + widthMax + 50;
++			CellComponent comp = (CellComponent) prev.getUserObject();
++			if (!comp.isPinned()) {
++				GraphConstants.setBounds(prev.getAttributes(), boundspadre);
++				x = (int) boundspadre.getCenterX() + widthMax + 50;
++			}
+ 			prev.seen = true;
+ 			flag2 = true;
+ 		}
+@@ -3121,7 +3210,9 @@
+ 			Rectangle bounds = GraphConstants.getBounds(((JmtCell) next.get(0)).getAttributes()).getBounds();
+ 			bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
+ 					(int) boundspadre.getCenterY() - (int) (bounds.getHeight() / 2));
+-			GraphConstants.setBounds(((JmtCell) next.get(0)).getAttributes(), bounds);
++			CellComponent comp = (CellComponent) ((JmtCell) next.get(0)).getUserObject();
++			if (!comp.isPinned())
++				GraphConstants.setBounds(((JmtCell) next.get(0)).getAttributes(), bounds);
+ 
+ 			((JmtCell) next.get(0)).seen = true;
+ 			j = searchNext((JmtCell) next.get(0));
+@@ -3160,8 +3251,11 @@
+ 				Rectangle bounds = GraphConstants.getBounds(((JmtCell) sons.get(i)).getAttributes()).getBounds();
+ 				bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
+ 						w - (int) (bounds.getHeight() / 2) + 80);
+-				GraphConstants.setBounds(((JmtCell) sons.get(i)).getAttributes(), bounds);
+ 
++				CellComponent comp = (CellComponent) ((JmtCell) sons.get(i)).getUserObject();
++				if (!comp.isPinned())
++					GraphConstants.setBounds(((JmtCell) sons.get(i)).getAttributes(), bounds);
++
+ 				((JmtCell) sons.get(i)).seen = true;
+ 				listEdges = DefaultGraphModel.getOutgoingEdges(graphmodel, sons.get(i));
+ 
+@@ -3349,4 +3443,7 @@
  		}
  	}
  
@@ -1218,3 +1390,72 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getFreeOutPortAt(x, y), false);
 +	}
  }
+Index: src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java	(working copy)
+@@ -24,10 +24,7 @@
+ import java.awt.event.KeyEvent;
+ import java.awt.event.KeyListener;
+ 
+-import javax.swing.Box;
+-import javax.swing.JLabel;
+-import javax.swing.JPanel;
+-import javax.swing.JTextField;
++import javax.swing.*;
+ import javax.swing.border.EtchedBorder;
+ import javax.swing.border.TitledBorder;
+ 
+@@ -49,6 +46,7 @@
+ 	private JmodelStationDefinition sd;
+ 	private Object key;
+ 	private JTextField name = new JTextField();
++	private JCheckBox pinned = new JCheckBox();
+ 
+ 	/**
+ 	 * Creates a new Station Name Panel
+@@ -65,13 +63,22 @@
+ 	 * Inits this panel's components and their action listeners
+ 	 */
+ 	private void init() {
++		BorderLayout pinLayout = new BorderLayout(5, 0);
++		JPanel pinPanel = new JPanel();
++		pinPanel.setLayout(pinLayout);
+ 		setLayout(new BorderLayout(5, 5));
+ 		setBorder(new TitledBorder(new EtchedBorder(), "Station Name"));
+ 		add(new JLabel("Station Name: "), BorderLayout.WEST);
+ 		name.setText(sd.getStationName(key));
++		pinned.setSelected(sd.isPinned(key));
+ 		add(name, BorderLayout.CENTER);
++		pinPanel.add(new JLabel("Pin:"), BorderLayout.WEST);
++		pinPanel.add(pinned, BorderLayout.CENTER);
++		add(pinPanel, BorderLayout.EAST);
+ 		add(Box.createVerticalStrut(5), BorderLayout.SOUTH);
+ 		inputListener listener = new inputListener();
++		pinned.addFocusListener(listener);
++		pinned.addKeyListener(listener);
+ 		name.addKeyListener(listener);
+ 		name.addFocusListener(listener);
+ 	}
+@@ -86,7 +93,9 @@
+ 		 */
+ 		protected void updateValues() {
+ 			sd.setStationName(key, name.getText());
++			sd.setIsPinned(key, pinned.isSelected());
+ 			name.setText(sd.getStationName(key));
++			pinned.setSelected(sd.isPinned(key));
+ 		}
+ 
+ 		public void focusLost(FocusEvent e) {
+Index: src/main/resources/jmt/common/xml/JModelGUI.xsd
+===================================================================
+--- src/main/resources/jmt/common/xml/JModelGUI.xsd	(revision 978)
++++ src/main/resources/jmt/common/xml/JModelGUI.xsd	(working copy)
+@@ -31,6 +31,7 @@
+ 									<xs:attribute name="x" type="jdouble" use="required"/>
+ 									<xs:attribute name="y" type="jdouble" use="required"/>
+ 									<xs:attribute name="rotate" type="xs:boolean" use="optional"/>
++									<xs:attribute name="pin" type="xs:boolean" use="optional"/>
+ 								</xs:complexType>
+ 							</xs:element>
+ 						</xs:sequence>
