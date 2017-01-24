@@ -535,21 +535,21 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +
 +							if (from.getY() < to.getY()) {
 +								double x2;
-+								double right = targetBounds.getX() + targetBounds.getWidth() + 15;
++								double right = targetBounds.getX() + targetBounds.getWidth() + offset;
 +								x2 = Math.max(routed[0].getX(), right);
 +								routed[0].setLocation(x2, routed[0].getY());
 +								routed[1].setLocation(x2, routed[1].getY());
 +							}
 +						} else {
 +							double x;
-+							double left = sourceBounds.getX() + sourceBounds.getWidth() + 15 + 4;
++							double left = sourceBounds.getX() + sourceBounds.getWidth() + offset + 4;
 +							x = Math.max(routed[2].getX(), left);
 +							routed[2].setLocation(x, routed[2].getY());
 +							routed[3].setLocation(x, routed[3].getY());
 +
 +							if (from.getY() < to.getY()) {
 +								double x2;
-+								double left2 = targetBounds.getX() - 15;
++								double left2 = targetBounds.getX() - offset;
 +								x2 = Math.min(routed[0].getX(), left2);
 +								routed[0].setLocation(x2, routed[0].getY());
 +								routed[1].setLocation(x2, routed[1].getY());
@@ -596,7 +596,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
  						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
  
-@@ -238,18 +342,190 @@
+@@ -238,18 +342,211 @@
  					}
  				}
  			}
@@ -773,6 +773,27 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +						routed[routed.length - 2].setLocation(routed[routed.length - 1].getX(), routed[routed.length - 2].getY());
 +					}
 +				}
++			}
++
++			if ((routed[routed.length - 1].getX() > (targetBounds.getMinX() - offset)) && routed.length > 1 && routed[routed.length - 1] != null && routed[routed.length - 2] != null) {
++				routed[routed.length - 1].setLocation(routed[routed.length - 1].getX() - 2 * Math.max(offset, routed[routed.length - 1].getX() - targetBounds.getMinX()), routed[routed.length - 1].getY());
++
++				Point2D newRouted[] = new Point2D[routed.length + 2];
++				System.arraycopy(routed, 0, newRouted, 0, routed.length - 1);
++				double diffY = Math.abs(routed[routed.length - 2].getY() - routed[routed.length - 1].getY()) * 0.5;
++				if (routed[routed.length - 1].getY() > routed[routed.length - 2].getY()) {
++					// edge is going down
++					newRouted[routed.length - 1] = new Point2D.Double(routed[routed.length - 2].getX(), routed[routed.length - 2].getY() + diffY);
++					newRouted[routed.length] = new Point2D.Double(routed[routed.length - 1].getX(), routed[routed.length - 2].getY() + diffY);
++				} else {
++					newRouted[routed.length - 1] = new Point2D.Double(routed[routed.length - 2].getX(), routed[routed.length - 2].getY() - diffY);
++					newRouted[routed.length] = new Point2D.Double(routed[routed.length - 1].getX(), routed[routed.length - 2].getY() - diffY);
++				}
++
++				newRouted[routed.length + 1] = routed[routed.length - 1];
++
++				routed = newRouted;
++
 +			}
 +
  			//Sets add points
