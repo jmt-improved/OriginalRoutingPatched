@@ -224,7 +224,27 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java	(working copy)
-@@ -26,20 +26,18 @@
+@@ -1,16 +1,16 @@
+ /**
+  * Copyright (C) 2016, Laboratorio di Valutazione delle Prestazioni - Politecnico di Milano
+-
++ * <p>
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2 of the License, or
+  * (at your option) any later version.
+-
++ * <p>
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  * GNU General Public License for more details.
+-
++ * <p>
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+@@ -26,8 +26,7 @@
  import java.awt.font.FontRenderContext;
  import java.awt.geom.Point2D;
  import java.awt.geom.Rectangle2D;
@@ -234,9 +254,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
  
  import javax.swing.Icon;
  import javax.swing.ImageIcon;
- import javax.swing.tree.TreeNode;
+@@ -35,251 +34,270 @@
  
-+import javafx.scene.control.Cell;
  import jmt.gui.common.JMTImageLoader;
  
 +import jmt.gui.common.MergedIcon;
@@ -249,91 +268,475 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
  
  /**
   * vertex cell for jmt
-@@ -57,6 +55,7 @@
- 	// Used to determine if parent of this cell has changed (to detect enter and exit from
- 	// blocking regions)
- 	private TreeNode parentRef;
-+
- 	/**
- 	 * Different kind of nodes.
- 	 */
-@@ -74,12 +73,14 @@
- 	public static final int PLACE = 11;
- 	public static final int TRANSITION = 12;
+  *
+  * @author Federico Granata
+- * Date: 11-lug-2003
+- * Time: 13.48.34
+- *
++ *         Date: 11-lug-2003
++ *         Time: 13.48.34
+  * @author Bertoli Marco
+  */
+ public abstract class JmtCell extends DefaultGraphCell {
+ 
+-	private static final long serialVersionUID = 1L;
+-	private Dimension imageDimension;
+-	// Used to determine if parent of this cell has changed (to detect enter and exit from
+-	// blocking regions)
+-	private TreeNode parentRef;
+-	/**
+-	 * Different kind of nodes.
+-	 */
+-	public static final int SOURCE = 0;
+-	public static final int TERMINAL = 1;
+-	public static final int DELAY = 2;
+-	public static final int SERVER = 3;
+-	public static final int SINK = 4;
+-	public static final int FORK = 5;
+-	public static final int JOIN = 6;
+-	public static final int LDSERVER = 7;
+-	public static final int CLASSSWITCH = 8;
+-	public static final int SEMAPHORE = 9;
+-	public static final int SCALER = 10;
+-	public static final int PLACE = 11;
+-	public static final int TRANSITION = 12;
++    private static final long serialVersionUID = 1L;
++    private Dimension imageDimension;
++    // Used to determine if parent of this cell has changed (to detect enter and exit from
++    // blocking regions)
++    private TreeNode parentRef;
  
 -	private Port[] ports;
-+	//private Port[] ports;
++    /**
++     * Different kind of nodes.
++     */
++    public static final int SOURCE = 0;
++    public static final int TERMINAL = 1;
++    public static final int DELAY = 2;
++    public static final int SERVER = 3;
++    public static final int SINK = 4;
++    public static final int FORK = 5;
++    public static final int JOIN = 6;
++    public static final int LDSERVER = 7;
++    public static final int CLASSSWITCH = 8;
++    public static final int SEMAPHORE = 9;
++    public static final int SCALER = 10;
++    public static final int PLACE = 11;
++    public static final int TRANSITION = 12;
  
-+	private List<Port> ports;
-+
- 	// Giuseppe De Cicco & Fabio Granara
- 	public boolean seen = false;
+-	// Giuseppe De Cicco & Fabio Granara
+-	public boolean seen = false;
 -	public int in = 0;
 -	public int out = 0;
-+	public int in = 1;
-+	public int out = 1;
- 	public boolean okin = false;
- 	public boolean okout = false;
- 	public int sons = 1;
-@@ -104,7 +105,12 @@
- 	public JmtCell(String icon, Object userObject) {
- 		super(userObject);
- 		ImageIcon ico = JMTImageLoader.loadImage(icon);
+-	public boolean okin = false;
+-	public boolean okout = false;
+-	public int sons = 1;
+-	public int type;
+-	private boolean leftInputCell = true;
++    //private Port[] ports;
+ 
+-	/**
+-	 * Tells if this component can be placed on JGraph or has been disabled. This is
+-	 * useful to load old models with disabled components (like terminals)
+-	 */
+-	public static final boolean canBePlaced = true;
++    private List<Port> ports;
+ 
+-	/**
+-	 * Creates a graph cell and initializes it with the specified user object.
+-	 *
+-	 * @param userObject an Object provided by the user that constitutes
+-	 *                   the cell's data
+-	 *
+-	 * Conti Andrea  01-09-2003
+-	 * Bertoli Marco 04-giu-2005
+-	 */
+-	public JmtCell(String icon, Object userObject) {
+-		super(userObject);
+-		ImageIcon ico = JMTImageLoader.loadImage(icon);
 -		GraphConstants.setIcon(attributes, ico);
-+		if (isPinned()) {
-+			ImageIcon lockIcon = JMTImageLoader.loadImage("lock", new Dimension(16, 16));
-+			GraphConstants.setIcon(attributes, new MergedIcon(JMTImageLoader.loadImage(icon), lockIcon));
-+		} else {
-+			GraphConstants.setIcon(attributes, ico);
-+		}
- 		imageDimension = new Dimension(ico.getIconWidth(), ico.getIconHeight());
- 		GraphConstants.setSizeable(attributes, false);
- 		GraphConstants.setSize(attributes, imageDimension);
-@@ -130,6 +136,12 @@
- 		out -= 1;
- 	}
+-		imageDimension = new Dimension(ico.getIconWidth(), ico.getIconHeight());
+-		GraphConstants.setSizeable(attributes, false);
+-		GraphConstants.setSize(attributes, imageDimension);
+-	}
++    // Giuseppe De Cicco & Fabio Granara
++    public boolean seen = false;
++    public int in = 1;
++    public int out = 1;
++    public boolean okin = false;
++    public boolean okout = false;
++    public int sons = 1;
++    public int type;
++    private boolean leftInputCell = true;
  
-+	public int numInEdges() { return in; }
-+
-+	public int numOutEdges() { return out; }
-+
-+	public boolean isPinned() { return ((CellComponent) getUserObject()).isPinned(); }
-+
- 	/**
- 	 * Returns Cell's real size (this method considers Icon and name size)
- 	 *
-@@ -158,7 +170,7 @@
- 	 *
- 	 * @return array of ports
- 	 */
+-	// Giuseppe De Cicco & Fabio Granara
+-	public void AddIn() {
+-		in += 1;
+-	}
++    /**
++     * Tells if this component can be placed on JGraph or has been disabled. This is
++     * useful to load old models with disabled components (like terminals)
++     */
++    public static final boolean canBePlaced = true;
+ 
+-	// Giuseppe De Cicco & Fabio Granara
+-	public void SubIn() {
+-		in -= 1;
+-	}
++    /**
++     * Creates a graph cell and initializes it with the specified user object.
++     *
++     * @param userObject an Object provided by the user that constitutes
++     *                   the cell's data
++     *                   <p>
++     *                   Conti Andrea  01-09-2003
++     *                   Bertoli Marco 04-giu-2005
++     */
++    public JmtCell(String icon, Object userObject) {
++        super(userObject);
++        ImageIcon ico = JMTImageLoader.loadImage(icon);
++        if (isPinned()) {
++            ImageIcon lockIcon = JMTImageLoader.loadImage("lock", new Dimension(16, 16));
++            GraphConstants.setIcon(attributes, new MergedIcon(JMTImageLoader.loadImage(icon), lockIcon));
++        } else {
++            GraphConstants.setIcon(attributes, ico);
++        }
++        imageDimension = new Dimension(ico.getIconWidth(), ico.getIconHeight());
++        GraphConstants.setSizeable(attributes, false);
++        GraphConstants.setSize(attributes, imageDimension);
++    }
+ 
+-	// Giuseppe De Cicco & Fabio Granara
+-	public void AddOut() {
+-		out += 1;
+-	}
++    // Giuseppe De Cicco & Fabio Granara
++    public void AddIn() {
++        in += 1;
++    }
+ 
+-	// Giuseppe De Cicco & Fabio Granara
+-	public void SubOut() {
+-		out -= 1;
+-	}
++    // Giuseppe De Cicco & Fabio Granara
++    public void SubIn() {
++        in -= 1;
++    }
+ 
+-	/**
+-	 * Returns Cell's real size (this method considers Icon and name size)
+-	 *
+-	 * @param graph <code>JGraph</code> object to retrieve font dimension informations
+-	 * @return cell's real size
+-	 *
+-	 * Bertoli Marco  4-giu-2005
+-	 */
+-	public Dimension getSize(JGraph graph) {
+-		Dimension cellDimension = (Dimension) imageDimension.clone();
+-		// Gets the graph font
+-		Font font = graph.getFont();
+-		// Gets the graphical context
+-		Graphics2D g2D = (Graphics2D) graph.getGraphics();
+-		// Gets the bounds of the cell name
+-		FontRenderContext frc = g2D.getFontRenderContext();
+-		Rectangle r = font.getStringBounds(getUserObject().toString(), frc).getBounds();
+-		// Sets the cell dimension
+-		cellDimension.height += r.height + 5;
+-		cellDimension.width = Math.max(cellDimension.width, r.width + 10);
+-		return cellDimension;
+-	}
++    // Giuseppe De Cicco & Fabio Granara
++    public void AddOut() {
++        out += 1;
++    }
+ 
+-	/**
+-	 * Creates the ports for this vertex
+-	 *
+-	 * @return array of ports
+-	 */
 -	public abstract Port[] createPorts();
-+	public abstract List<Port> createPorts();
++    // Giuseppe De Cicco & Fabio Granara
++    public void SubOut() {
++        out -= 1;
++    }
  
- 	/**
- 	 * Sets all the attributes like background colour, dimensions, port number
-@@ -186,6 +198,7 @@
- 		for (Port port : ports) {
- 			add((DefaultPort) port);
- 		}
-+
- 		return nest;
- 	}
+-	/**
+-	 * Sets all the attributes like background colour, dimensions, port number
+-	 * & position
+-	 *
+-	 * @param pt
+-	 * @return created map
+-	 */
+-	public Hashtable<Object, Map> setAttributes(Point2D pt, JGraph graph) {
+-		//contains attribute of the cell & ports
+-		Hashtable<Object, Map> nest = new Hashtable<Object, Map>();
++    public int numInEdges() {
++        return in;
++    }
  
-@@ -195,7 +208,8 @@
- 			if (port instanceof InputPort && isLeftInputCell() || port instanceof OutputPort && !isLeftInputCell()) {
- 				GraphConstants.setOffset(attr, getInPortOffset(icon, cellDimension));
- 			} else {
+-		Dimension cellDimension = getSize(graph);
+-		//contains attrib of cell
+-		Map attr = getAttributes();
+-		GraphConstants.setBounds(attr, new Rectangle2D.Double(pt.getX(), pt.getY(), cellDimension.getWidth(), cellDimension.getHeight()));
+-		GraphConstants.setEditable(attr, false);
+-		GraphConstants.setBackground(attr, graph.getBackground());
+-		nest.put(this, attr);
++    public int numOutEdges() {
++        return out;
++    }
+ 
+-		//create ports
+-		ports = createPorts();
+-		Icon icon = GraphConstants.getIcon(attr);
+-		updatePortPositions(nest, icon, cellDimension);
+-		for (Port port : ports) {
+-			add((DefaultPort) port);
+-		}
+-		return nest;
+-	}
++    public boolean isPinned() {
++        return ((CellComponent) getUserObject()).isPinned();
++    }
+ 
+-	public void updatePortPositions(Map<Object, Map> nest, Icon icon, Dimension cellDimension) {
+-		for (Port port : ports) {
+-			Map attr = new Hashtable();
+-			if (port instanceof InputPort && isLeftInputCell() || port instanceof OutputPort && !isLeftInputCell()) {
+-				GraphConstants.setOffset(attr, getInPortOffset(icon, cellDimension));
+-			} else {
 -				GraphConstants.setOffset(attr, getOutPortoffset(icon, cellDimension));
-+				Point offset = getOutPortoffset(icon, cellDimension);
-+				GraphConstants.setOffset(attr, offset);
- 			}
- 			nest.put(port, attr);
- 		}
-@@ -281,5 +295,4 @@
- 	 * @return the name of the icon of this cell
- 	 */
- 	public abstract String getIcon();
--
+-			}
+-			nest.put(port, attr);
+-		}
+-	}
++    /**
++     * Returns Cell's real size (this method considers Icon and name size)
++     *
++     * @param graph <code>JGraph</code> object to retrieve font dimension informations
++     * @return cell's real size
++     * <p>
++     * Bertoli Marco  4-giu-2005
++     */
++    public Dimension getSize(JGraph graph) {
++        Dimension cellDimension = (Dimension) imageDimension.clone();
++        // Gets the graph font
++        Font font = graph.getFont();
++        // Gets the graphical context
++        Graphics2D g2D = (Graphics2D) graph.getGraphics();
++        // Gets the bounds of the cell name
++        FontRenderContext frc = g2D.getFontRenderContext();
++        Rectangle r = font.getStringBounds(getUserObject().toString(), frc).getBounds();
++        // Sets the cell dimension
++        cellDimension.height += r.height + 5;
++        cellDimension.width = Math.max(cellDimension.width, r.width + 10);
++        return cellDimension;
++    }
+ 
+-	protected Point getInPortOffset(Icon icon, Dimension cellDimension) {
+-		int iconHeight = icon.getIconHeight();
+-		int iconWidth = icon.getIconWidth();
+-		int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width;
+-		int yOff = iconHeight / 2 * 1000 / cellDimension.height;
+-		return new Point(xOff, yOff);
+-	}
++    /**
++     * Creates the ports for this vertex
++     *
++     * @return array of ports
++     */
++    public abstract List<Port> createPorts();
+ 
+-	protected Point getOutPortoffset(Icon icon, Dimension cellDimension) {
+-		int iconHeight = icon.getIconHeight();
+-		int iconWidth = icon.getIconWidth();
+-		int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width + iconWidth * 1000 / cellDimension.width;
+-		int yOff = iconHeight / 2 * 1000 / cellDimension.height;
+-		return new Point(xOff, yOff);
+-	}
++    /**
++     * Sets all the attributes like background colour, dimensions, port number
++     * & position
++     *
++     * @param pt
++     * @return created map
++     */
++    public Hashtable<Object, Map> setAttributes(Point2D pt, JGraph graph) {
++        //contains attribute of the cell & ports
++        Hashtable<Object, Map> nest = new Hashtable<Object, Map>();
+ 
+-	/**
+-	 * Tells if the InputPort of this cell is on the left side
+-	 * @return true if the InputPort of this cell is on the left side
+-	 */
+-	// Giuseppe De Cicco & Fabio Granara
+-	public boolean isLeftInputCell() {
+-		return leftInputCell;
+-	}
++        Dimension cellDimension = getSize(graph);
++        //contains attrib of cell
++        Map attr = getAttributes();
++        GraphConstants.setBounds(attr, new Rectangle2D.Double(pt.getX(), pt.getY(), cellDimension.getWidth(), cellDimension.getHeight()));
++        GraphConstants.setEditable(attr, false);
++        GraphConstants.setBackground(attr, graph.getBackground());
++        nest.put(this, attr);
+ 
+-	// Giuseppe De Cicco & Fabio Granara
+-	public void setLeftInputCell(boolean state) {
+-		leftInputCell = state;
+-	}
++        //create ports
++        ports = createPorts();
++        Icon icon = GraphConstants.getIcon(attr);
++        updatePortPositions(nest, icon, cellDimension);
++        for (Port port : ports) {
++            add((DefaultPort) port);
++        }
+ 
+-	/**
+-	 * Resets stored parent information for this cell
+-	 */
+-	public void resetParent() {
+-		parentRef = getParent();
+-	}
++        return nest;
++    }
+ 
+-	/**
+-	 * Tells if this cell parent was changed since last call to resetParent() method
+-	 *
+-	 * @return true if parent changed, false otherwise
+-	 * @see #resetParent()
+-	 */
+-	public boolean parentChanged() {
+-		if (parentRef == null && getParent() == null) {
+-			return false;
+-		} else if (parentRef == null || getParent() == null) {
+-			return true;
+-		} else {
+-			return !parentRef.equals(getParent());
+-		}
+-	}
++    public void updatePortPositions(Map<Object, Map> nest, Icon icon, Dimension cellDimension) {
++        for (Port port : ports) {
++            Map attr = new Hashtable();
++            if (port instanceof InputPort && isLeftInputCell() || port instanceof OutputPort && !isLeftInputCell()) {
++                GraphConstants.setOffset(attr, getInPortOffset(icon, cellDimension));
++            } else {
++                Point offset = getOutPortoffset(icon, cellDimension);
++                GraphConstants.setOffset(attr, offset);
++            }
++            nest.put(port, attr);
++        }
++    }
+ 
+-	/**
+-	 * Tells if this station generates or destroys jobs (useful for blocking region
+-	 * management)
+-	 *
+-	 * @return true if this station generates or destroy jobs, false otherwise
+-	 */
+-	public boolean generateOrDestroyJobs() {
+-		return false;
+-	}
++    protected Point getInPortOffset(Icon icon, Dimension cellDimension) {
++        int iconHeight = icon.getIconHeight();
++        int iconWidth = icon.getIconWidth();
++        int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width;
++        int yOff = iconHeight / 2 * 1000 / cellDimension.height;
++        return new Point(xOff, yOff);
++    }
+ 
+-	/**
+-	 * Returns previous parent of this cell (the one present when resetParent()
+-	 * method was called)
+-	 *
+-	 * @return previous parent of this cell
+-	 * @see #resetParent()
+-	 */
+-	public TreeNode getPrevParent() {
+-		return parentRef;
+-	}
++    protected Point getOutPortoffset(Icon icon, Dimension cellDimension) {
++        int iconHeight = icon.getIconHeight();
++        int iconWidth = icon.getIconWidth();
++        int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width + iconWidth * 1000 / cellDimension.width;
++        int yOff = iconHeight / 2 * 1000 / cellDimension.height;
++        return new Point(xOff, yOff);
++    }
+ 
+-	/**
+-	 * Returns the name of the icon of this cell
+-	 *
+-	 * @return the name of the icon of this cell
+-	 */
+-	public abstract String getIcon();
++    /**
++     * Tells if the InputPort of this cell is on the left side
++     *
++     * @return true if the InputPort of this cell is on the left side
++     */
++    // Giuseppe De Cicco & Fabio Granara
++    public boolean isLeftInputCell() {
++        return leftInputCell;
++    }
+ 
++    // Giuseppe De Cicco & Fabio Granara
++    public void setLeftInputCell(boolean state) {
++        leftInputCell = state;
++    }
++
++    /**
++     * Resets stored parent information for this cell
++     */
++    public void resetParent() {
++        parentRef = getParent();
++    }
++
++    /**
++     * Tells if this cell parent was changed since last call to resetParent() method
++     *
++     * @return true if parent changed, false otherwise
++     * @see #resetParent()
++     */
++    public boolean parentChanged() {
++        if (parentRef == null && getParent() == null) {
++            return false;
++        } else if (parentRef == null || getParent() == null) {
++            return true;
++        } else {
++            return !parentRef.equals(getParent());
++        }
++    }
++
++    /**
++     * Tells if this station generates or destroys jobs (useful for blocking region
++     * management)
++     *
++     * @return true if this station generates or destroy jobs, false otherwise
++     */
++    public boolean generateOrDestroyJobs() {
++        return false;
++    }
++
++    /**
++     * Returns previous parent of this cell (the one present when resetParent()
++     * method was called)
++     *
++     * @return previous parent of this cell
++     * @see #resetParent()
++     */
++    public TreeNode getPrevParent() {
++        return parentRef;
++    }
++
++    /**
++     * Returns the name of the icon of this cell
++     *
++     * @return the name of the icon of this cell
++     */
++    public abstract String getIcon();
  }
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
 ===================================================================
