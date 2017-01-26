@@ -2065,7 +2065,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -3349,4 +3420,119 @@
+@@ -3349,4 +3420,123 @@
  		}
  	}
  
@@ -2161,12 +2161,16 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +	public void snapToGrid() {
 +
 +		int cellSize;
-+		String size = JOptionPane.showInputDialog(mainWindow, "Please specify the cell size in pixels");
++		String size = JOptionPane.showInputDialog(mainWindow, "Please specify the cells size in pixels:");
 +		try {
 +			cellSize = Integer.parseInt(size);
++			if (cellSize <= 0) {
++				cellSize = 50;
++			}
 +		} catch (NumberFormatException e) {
 +			cellSize = 50;
 +		}
++
 +		Object[] cells = graph.getDescendants(graph.getRoots());
 +
 +		for (int i = 0; i < cells.length; i++) {
