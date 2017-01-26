@@ -1616,6 +1616,18 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
  	public void overlay(Graphics2D g) {
  		if (start != null && current != null) {
  			g.draw(new Line2D.Double(start.getX(), start.getY(), current.getX(), current.getY()));
+Index: src/main/java/jmt/gui/jsimgraph/controller/JmtGraphUI.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/controller/JmtGraphUI.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/controller/JmtGraphUI.java	(working copy)
+@@ -142,6 +142,7 @@
+ 				mediator.enableAddBlockingRegion(!cannotAddBlockingRegion);
+ 				mediator.enableRotateAction(true);
+ 				mediator.enableSetRight(true);
++				mediator.enableSnapToGrid(true);
+ 			} else if (foundBlockingRegion) {
+ 				mediator.enableCopyAction(true);
+ 				mediator.enableCutAction(true);
 Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/controller/Mediator.java	(revision 978)
@@ -1656,7 +1668,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  import jmt.gui.common.controller.DispatcherThread;
  import jmt.gui.common.controller.ModelChecker;
  import jmt.gui.common.controller.PADispatcherThread;
-@@ -78,20 +72,7 @@
+@@ -78,56 +72,8 @@
  import jmt.gui.common.xml.ModelLoader;
  import jmt.gui.common.xml.XMLWriter;
  import jmt.gui.jsimgraph.DialogFactory;
@@ -1674,11 +1686,64 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 -import jmt.gui.jsimgraph.JGraphMod.OutputPort;
 -import jmt.gui.jsimgraph.JGraphMod.SinkCell;
 -import jmt.gui.jsimgraph.JGraphMod.SourceCell;
+-import jmt.gui.jsimgraph.controller.actions.About;
+-import jmt.gui.jsimgraph.controller.actions.AbstractJmodelAction;
+-import jmt.gui.jsimgraph.controller.actions.ActionCopy;
+-import jmt.gui.jsimgraph.controller.actions.ActionCut;
+-import jmt.gui.jsimgraph.controller.actions.ActionDelete;
+-import jmt.gui.jsimgraph.controller.actions.ActionPaste;
+-import jmt.gui.jsimgraph.controller.actions.ActionRedo;
+-import jmt.gui.jsimgraph.controller.actions.ActionRotate;
+-import jmt.gui.jsimgraph.controller.actions.ActionSetRight;
+-import jmt.gui.jsimgraph.controller.actions.ActionUndo;
+-import jmt.gui.jsimgraph.controller.actions.AddBlockingRegion;
+-import jmt.gui.jsimgraph.controller.actions.CloseModel;
+-import jmt.gui.jsimgraph.controller.actions.DownloadDefaultTemplates;
+-import jmt.gui.jsimgraph.controller.actions.EditDefaults;
+-import jmt.gui.jsimgraph.controller.actions.EditMeasures;
+-import jmt.gui.jsimgraph.controller.actions.EditPAParams;
+-import jmt.gui.jsimgraph.controller.actions.EditSimParams;
+-import jmt.gui.jsimgraph.controller.actions.EditUserClasses;
+-import jmt.gui.jsimgraph.controller.actions.Exit;
+-import jmt.gui.jsimgraph.controller.actions.NewModel;
+-import jmt.gui.jsimgraph.controller.actions.OpenHelp;
+-import jmt.gui.jsimgraph.controller.actions.OpenModel;
+-import jmt.gui.jsimgraph.controller.actions.PauseSimulation;
+-import jmt.gui.jsimgraph.controller.actions.SaveModel;
+-import jmt.gui.jsimgraph.controller.actions.SaveModelAs;
+-import jmt.gui.jsimgraph.controller.actions.SetConnectState;
+-import jmt.gui.jsimgraph.controller.actions.SetOptions;
+-import jmt.gui.jsimgraph.controller.actions.SetSelectState;
+-import jmt.gui.jsimgraph.controller.actions.ShowResults;
+-import jmt.gui.jsimgraph.controller.actions.Simulate;
+-import jmt.gui.jsimgraph.controller.actions.SolveAnalytic;
+-import jmt.gui.jsimgraph.controller.actions.SolveApprox;
+-import jmt.gui.jsimgraph.controller.actions.StopSimulation;
+-import jmt.gui.jsimgraph.controller.actions.SwitchToExactSolver;
+-import jmt.gui.jsimgraph.controller.actions.TakeScreenShot;
+-import jmt.gui.jsimgraph.controller.actions.UseTemplate;
 +import jmt.gui.jsimgraph.JGraphMod.*;
- import jmt.gui.jsimgraph.controller.actions.About;
- import jmt.gui.jsimgraph.controller.actions.AbstractJmodelAction;
- import jmt.gui.jsimgraph.controller.actions.ActionCopy;
-@@ -330,6 +311,8 @@
++import jmt.gui.jsimgraph.controller.actions.*;
+ import jmt.gui.jsimgraph.definitions.JMTPoint;
+ import jmt.gui.jsimgraph.definitions.JSimGraphModel;
+ import jmt.gui.jsimgraph.definitions.JmodelClassDefinition;
+@@ -233,6 +179,7 @@
+ 	private AbstractJmodelAction takeScreenShot;
+ 	private AbstractJmodelAction actionRotate;
+ 	private AbstractJmodelAction actionSetRight;
++	private AbstractJmodelAction actionSnapToGrid;
+ 	private AbstractJmodelAction editUndo;
+ 	private AbstractJmodelAction editRedo;
+ 
+@@ -320,6 +267,7 @@
+ 		addBlockingRegion = new AddBlockingRegion(this);
+ 
+ 		actionSetRight = new ActionSetRight(this);
++		actionSnapToGrid = new SnapToGrid(this);
+ 		takeScreenShot = new TakeScreenShot(this);
+ 
+ 		actionRotate = new ActionRotate(this);
+@@ -330,6 +278,8 @@
  		switchToExactSolver = new SwitchToExactSolver(this);
  		// Initialize new Component bar
  		componentBar = new ComponentBar(this);
@@ -1687,7 +1752,45 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	}
  
  	/**
-@@ -1017,6 +1000,20 @@
+@@ -415,6 +365,10 @@
+ 		addBlockingRegion.setEnabled(state);
+ 	}
+ 
++	public void enableSnapToGrid(boolean state) {
++		actionSnapToGrid.setEnabled(state);
++	}
++
+ 	public void enableSetRight(boolean state) {
+ 		actionSetRight.setEnabled(state);
+ 	}
+@@ -423,6 +377,10 @@
+ 		return actionSetRight;
+ 	}
+ 
++	public AbstractJmodelAction getSnapToGrid() {
++		return actionSnapToGrid;
++	}
++
+ 	public AbstractJmodelAction getEditDefaults() {
+ 		return editDefaults;
+ 	}
+@@ -689,6 +647,7 @@
+ 		setSelect.setEnabled(false);
+ 		actionRotate.setEnabled(false);
+ 		actionSetRight.setEnabled(false);
++		actionSnapToGrid.setEnabled(false);
+ 
+ 		// Enable the action to perform editing user classes
+ 		editUserClasses.setEnabled(true);
+@@ -781,6 +740,7 @@
+ 		actionDelete.setEnabled(false);
+ 		actionRotate.setEnabled(false);
+ 		actionSetRight.setEnabled(false);
++		actionSnapToGrid.setEnabled(false);
+ 
+ 		setSelect.setEnabled(false);
+ 		simulate.setEnabled(false);
+@@ -1017,6 +977,20 @@
  			// Visualizes connection only if it can be created into data structure
  			if (model.setConnected(sourceKey, targetKey, true)) {
  				graph.getModel().insert(insert, viewMap, cs, null, null);
@@ -1708,7 +1811,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			}
  		}
  	}
-@@ -1062,7 +1059,7 @@
+@@ -1062,7 +1036,7 @@
  		viewMap.put(connection, map);
  		Object[] insert = new Object[] { connection };
  		ConnectionSet cs = new ConnectionSet();
@@ -1717,7 +1820,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		Iterator it;
  		it = source.getChildren().iterator();
  		DefaultPort tmpPort, sourcePort, targetPort;
-@@ -1069,27 +1066,53 @@
+@@ -1069,27 +1043,53 @@
  		sourcePort = null;
  		while (it.hasNext()) {
  			tmpPort = (DefaultPort) it.next();
@@ -1781,7 +1884,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  		return null;
  	}
-@@ -1122,8 +1145,15 @@
+@@ -1122,8 +1122,15 @@
  	 */
  	public PortView getInPortViewAt(int x, int y) {
  		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getInPortAt(x, y), false);
@@ -1797,7 +1900,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	/** gets the first portView of the output port of the cell at position
  	 *
  	 * @param x
-@@ -1166,6 +1196,7 @@
+@@ -1166,6 +1173,7 @@
  					((CellComponent) jcell.getUserObject()).getKey());
  			// Adds on the top a panel to change station name
  			stationPanel.add(new StationNamePanel(model, ((CellComponent) jcell.getUserObject()).getKey()), BorderLayout.NORTH);
@@ -1805,7 +1908,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			dialogFactory.getDialog(stationPanel, "Editing " + jcell.getUserObject().toString() + " Properties...");
  
  			// Updates cell dimensions if name was changed too much...
-@@ -1179,7 +1210,20 @@
+@@ -1179,7 +1187,20 @@
  				jcell.updatePortPositions(nest, GraphConstants.getIcon(attr), cellDimension);
  				graph.getGraphLayoutCache().edit(nest);
  			}
@@ -1827,7 +1930,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Blocking region editing
  		else if ((cell != null) && (cell instanceof BlockingRegion)) {
  			Object regionKey = ((BlockingRegion) cell).getKey();
-@@ -1290,11 +1334,27 @@
+@@ -1290,11 +1311,27 @@
  
  		if (!edges.isEmpty()) {
  			// Removes edges from graph
@@ -1858,7 +1961,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Checks if all children of a blocking region have been removed
  		Iterator<Object> it = regions.iterator();
  		while (it.hasNext()) {
-@@ -1333,10 +1393,30 @@
+@@ -1333,10 +1370,30 @@
  				model.deleteStation(((CellComponent) ((JmtCell) cell).getUserObject()).getKey());
  			} else if (cell instanceof JmtEdge) {
  				JmtEdge link = (JmtEdge) cell;
@@ -1889,7 +1992,15 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// If no stations remains gray select and link buttons
  		if (graphmodel.getRootCount() == 0) {
  			componentBar.clearButtonGroupSelection(0);
-@@ -2884,14 +2964,21 @@
+@@ -1343,6 +1400,7 @@
+ 			setConnect.setEnabled(false);
+ 			setSelect.setEnabled(false);
+ 			actionSetRight.setEnabled(false);
++			actionSnapToGrid.setEnabled(false);
+ 		}
+ 
+ 		// Selects components from removed blocking regions
+@@ -2884,14 +2942,21 @@
  			JmtCell current = (JmtCell) cell;
  			Map<Object, Map> nested = new Hashtable<Object, Map>();
  			Map attributeMap = new Hashtable();
@@ -1913,7 +2024,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			nested.put(cell, attributeMap);
  			current.setLeftInputCell(!current.isLeftInputCell());
  			current.updatePortPositions(nested, icon, current.getSize(graph));
-@@ -3089,7 +3176,9 @@
+@@ -3089,7 +3154,9 @@
  						- (int) (boundspadre.getHeight() / 2) + 30);
  			}
  
@@ -1924,7 +2035,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			x = (int) boundspadre.getCenterX() + widthMax + 50;
  			prev.seen = true;
  			flag2 = true;
-@@ -3121,7 +3210,8 @@
+@@ -3121,7 +3188,8 @@
  			Rectangle bounds = GraphConstants.getBounds(((JmtCell) next.get(0)).getAttributes()).getBounds();
  			bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  					(int) boundspadre.getCenterY() - (int) (bounds.getHeight() / 2));
@@ -1934,7 +2045,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  
  			((JmtCell) next.get(0)).seen = true;
  			j = searchNext((JmtCell) next.get(0));
-@@ -3160,8 +3250,10 @@
+@@ -3160,8 +3228,10 @@
  				Rectangle bounds = GraphConstants.getBounds(((JmtCell) sons.get(i)).getAttributes()).getBounds();
  				bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  						w - (int) (bounds.getHeight() / 2) + 80);
@@ -1946,7 +2057,15 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  				((JmtCell) sons.get(i)).seen = true;
  				listEdges = DefaultGraphModel.getOutgoingEdges(graphmodel, sons.get(i));
  
-@@ -3349,4 +3441,92 @@
+@@ -3324,6 +3394,7 @@
+ 			setConnect.setEnabled(false);
+ 			setSelect.setEnabled(false);
+ 			actionSetRight.setEnabled(false);
++			actionSnapToGrid.setEnabled(false);
+ 		}
+ 
+ 		// Selects components from removed blocking regions
+@@ -3349,4 +3420,119 @@
  		}
  	}
  
@@ -2038,6 +2157,33 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +			avoidOverlappingCell(cells);
 +		}
 +	}
++
++	public void snapToGrid() {
++
++		int cellSize;
++		String size = JOptionPane.showInputDialog(mainWindow, "Please specify the cell size in pixels");
++		try {
++			cellSize = Integer.parseInt(size);
++		} catch (NumberFormatException e) {
++			cellSize = 50;
++		}
++		Object[] cells = graph.getDescendants(graph.getRoots());
++
++		for (int i = 0; i < cells.length; i++) {
++			if (cells[i] instanceof JmtCell) {
++				JmtCell cell = (JmtCell) cells[i];
++				if (!cell.isPinned()) {
++					Rectangle2D bounds = GraphConstants.getBounds(cell.getAttributes()).getBounds();
++					bounds.setRect(Math.ceil(bounds.getX() / cellSize) * cellSize, Math.ceil(bounds.getY() / cellSize) * cellSize, bounds.getWidth(), bounds.getHeight());
++					GraphConstants.setBounds(cell.getAttributes(), bounds);
++				}
++			}
++		}
++
++		graphRepaint();
++		graph.getGraphLayoutCache().reload();
++		avoidOverlappingCell(cells);
++	}
  }
 Index: src/main/java/jmt/gui/jsimgraph/controller/actions/ActionSetRight.java
 ===================================================================
@@ -2060,6 +2206,19 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/actions/ActionSetRight.java
 +		mediator.tryAdjustGraph();
  	}
  }
+Index: src/main/java/jmt/gui/jsimgraph/mainGui/ComponentBar.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/mainGui/ComponentBar.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/mainGui/ComponentBar.java	(working copy)
+@@ -63,6 +63,8 @@
+ 		addGenericButton(m.getRotate());
+ 		// Set right button
+ 		addGenericButton(m.getSetRight());
++		// Snap to grid button
++		addGenericButton(m.getSnapToGrid());
+ 
+ 		// Disables all components button
+ 		enableButtons(false);
 Index: src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java	(revision 978)
