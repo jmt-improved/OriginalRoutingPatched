@@ -1,3 +1,69 @@
+Index: src/main/java/jmt/commandline/JSIMSolver.java
+===================================================================
+--- src/main/java/jmt/commandline/JSIMSolver.java	(revision 978)
++++ src/main/java/jmt/commandline/JSIMSolver.java	(working copy)
+@@ -49,7 +49,7 @@
+ 		}
+ 		File model = new File(args[0]);
+ 		if (!model.isFile()) {
+-			System.err.print("Invalid model file: " + model.getAbsolutePath());
++			System.err.print("INVALID model file: " + model.getAbsolutePath());
+ 			System.exit(1);
+ 		}
+ 
+@@ -60,7 +60,7 @@
+ 			try {
+ 				dispatcher.setSimulationSeed(Long.parseLong(args[1]));
+ 			} catch (NumberFormatException ex) {
+-				System.err.println("Invalid simulation seed");
++				System.err.println("INVALID simulation seed");
+ 				System.exit(1);
+ 			}
+ 		}
+Index: src/main/java/jmt/commandline/Jmt.java
+===================================================================
+--- src/main/java/jmt/commandline/Jmt.java	(revision 978)
++++ src/main/java/jmt/commandline/Jmt.java	(working copy)
+@@ -139,7 +139,7 @@
+ 
+ 	public static void mva(File model, File result) throws SolverException, InputDataException, IOException {
+ 		if (!model.isFile()) {
+-			System.err.print("Invalid model file: " + model.getAbsolutePath());
++			System.err.print("INVALID model file: " + model.getAbsolutePath());
+ 			System.exit(1);
+ 		}
+ 
+@@ -223,7 +223,7 @@
+ 			try {
+ 				dispatcher.setSimulationSeed(Long.parseLong(options.get(OPTION_SEED)));
+ 			} catch (NumberFormatException ex) {
+-				System.err.println("Invalid simulation seed. Should be a number.");
++				System.err.println("INVALID simulation seed. Should be a number.");
+ 				System.exit(1);
+ 			}
+ 		}
+@@ -232,7 +232,7 @@
+ 			try {
+ 				dispatcher.setSimulationMaxDuration(Long.parseLong(options.get(OPTION_MAXTIME)) * 1000);
+ 			} catch (NumberFormatException ex) {
+-				System.err.println("Invalid maximum simulation time. Should be a number.");
++				System.err.println("INVALID maximum simulation time. Should be a number.");
+ 				System.exit(1);
+ 			}	
+ 		}
+Index: src/main/java/jmt/engine/math/parser/Parser.java
+===================================================================
+--- src/main/java/jmt/engine/math/parser/Parser.java	(revision 978)
++++ src/main/java/jmt/engine/math/parser/Parser.java	(working copy)
+@@ -203,7 +203,7 @@
+ 			try {
+ 				d = Double.valueOf(s).doubleValue();
+ 			} catch (NumberFormatException ex) {
+-				throw new ParseError("Invalid number: " + s, inp_cur);
++				throw new ParseError("INVALID number: " + s, inp_cur);
+ 			}
+ 			return new Element(NUM, d);
+ 		}
 Index: src/main/java/jmt/gui/common/definitions/CommonModel.java
 ===================================================================
 --- src/main/java/jmt/gui/common/definitions/CommonModel.java	(revision 978)
@@ -110,6 +176,28 @@ Index: src/main/java/jmt/gui/common/xml/GuiXMLWriter.java
  			station.appendChild(position);
  			guiNode.appendChild(station);
  		}
+Index: src/main/java/jmt/gui/exact/table/ExactTable.java
+===================================================================
+--- src/main/java/jmt/gui/exact/table/ExactTable.java	(revision 978)
++++ src/main/java/jmt/gui/exact/table/ExactTable.java	(working copy)
+@@ -597,7 +597,7 @@
+ 		int[] colsselected = getSelectedColumns();
+ 		if (!((numrows - 1 == rowsselected[rowsselected.length - 1] - rowsselected[0] && numrows == rowsselected.length) && (numcols - 1 == colsselected[colsselected.length - 1]
+ 				- colsselected[0] && numcols == colsselected.length))) {
+-			JOptionPane.showMessageDialog(null, "Invalid Copy Selection", "Invalid Copy Selection", JOptionPane.ERROR_MESSAGE);
++			JOptionPane.showMessageDialog(null, "INVALID Copy Selection", "INVALID Copy Selection", JOptionPane.ERROR_MESSAGE);
+ 			return;
+ 		}
+ 		for (int i = 0; i < numrows; i++) {
+@@ -636,7 +636,7 @@
+ 		int[] colsselected = getSelectedColumns();
+ 		if (!((numrows - 1 == rowsselected[rowsselected.length - 1] - rowsselected[0] && numrows == rowsselected.length) && (numcols - 1 == colsselected[colsselected.length - 1]
+ 				- colsselected[0] && numcols == colsselected.length))) {
+-			JOptionPane.showMessageDialog(null, "Invalid Clear Selection", "Invalid Clear Selection", JOptionPane.ERROR_MESSAGE);
++			JOptionPane.showMessageDialog(null, "INVALID Clear Selection", "INVALID Clear Selection", JOptionPane.ERROR_MESSAGE);
+ 			return;
+ 		}
+ 		for (int i = 0; i < numrows; i++) {
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java	(revision 978)
@@ -742,15 +830,34 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java	(working copy)
-@@ -68,6 +68,7 @@
+@@ -47,6 +47,15 @@
+  * 
+  */
+ public class JmtEdge extends DefaultEdge {
++
++
++	public enum Type {
++		INVALID,
++		LOOP_BACK_UPPER,
++		LEFT_TO_RIGHT,
++		LOOP_BACK_LOWER
++	};
++
+ 	/**
+ 	 * 
+ 	 */
+@@ -68,7 +77,10 @@
  	protected Point2D intersectionPoint = null;
  	private Mediator mediator;
  	public ArrayList<Point2D> intersectionEdgePoint = new ArrayList<Point2D>();
 +	private List<Point2D> routedPoints = new ArrayList<>();
  
++	private Type type = Type.INVALID;
++
  	//    public ArrayList intersectionEdgePoint2=new ArrayList();
  
-@@ -767,4 +768,16 @@
+ 	public JmtEdge() {
+@@ -767,4 +779,23 @@
  		return (int) (max - boundsSource.getMaxX());
  	}
  
@@ -764,6 +871,13 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
 +		return routedPoints;
 +	}
 +
++	public void setType(Type newType) {
++		type = newType;
++	}
++
++	public Type getType() {
++		return type;
++	}
 +
 +
  }
@@ -840,7 +954,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(working copy)
-@@ -18,18 +18,21 @@
+@@ -18,18 +18,22 @@
  
  package jmt.gui.jsimgraph.JGraphMod;
  
@@ -858,6 +972,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 -import org.jgraph.graph.EdgeView;
 -import org.jgraph.graph.GraphConstants;
 -import org.jgraph.graph.PortView;
++import jdk.internal.util.xml.impl.Input;
 +import jmt.gui.common.JMTImageLoader;
 +import jmt.gui.jsimgraph.controller.Mediator;
 +import org.jgraph.graph.*;
@@ -869,7 +984,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  /**
  
   * @author Federico Granata
-@@ -41,6 +44,40 @@
+@@ -41,6 +45,40 @@
   */
  public class JmtRouting implements Edge.Routing {
  
@@ -893,8 +1008,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +		boolean evaluate(T v);
 +	}
 +
-+	static <T> Map<Boolean, Collection<T>> partition(Predicate<T> predicate, Collection<T> collection) {
-+		Map<Boolean, Collection<T>> result = new HashMap<>();
++	static <T> Map<Boolean, List<T>> partition(Predicate<T> predicate, List<T> collection) {
++		Map<Boolean, List<T>> result = new HashMap<>();
 +		try {
 +			result.put(true, collection.getClass().getConstructor().newInstance());
 +			result.put(false, collection.getClass().getConstructor().newInstance());
@@ -910,7 +1025,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  	private static final long serialVersionUID = 1L;
  	private int offset = 15; //offset per il source
  	private int offsetTo2 = -15; //offset per il target
-@@ -65,20 +102,20 @@
+@@ -65,20 +103,20 @@
  
  			Point2D[] routed;
  			int offset = this.offset;
@@ -936,7 +1051,15 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  			if (!source.isLeftInputCell()) {
  				offset = -offset;
  				//ringOffset=-ringOffset;
-@@ -110,10 +147,10 @@
+@@ -102,6 +140,7 @@
+ 
+ 			} else {
+ 				//the source is on the left of the target
++				edge.setType(JmtEdge.Type.LEFT_TO_RIGHT);
+ 				if ((int) from.getY() == (int) to.getY()
+ 						&& ((boundFrom < boundTo && offset > 0 && offsetTo2 < 0) || (boundFrom > boundTo && offset < 0 && offsetTo2 > 0))) {
+ 					list.add(from);
+@@ -110,10 +149,10 @@
  				}
  				if ((((boundTo - boundFrom) > offset * (1.1)) && (offset > 0 && offsetTo2 < 0))
  						|| (((boundFrom - boundTo) > (-offset * (1.1))) && (offset < 0 && offsetTo2 > 0))) {
@@ -948,11 +1071,12 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  				}
  				//____________inizio
  				else if ((offset < 0 && offsetTo2 < 0)) {
-@@ -188,14 +225,71 @@
+@@ -188,14 +227,73 @@
  				} else {
  
  					if ((from.getY() + sourceBounds.getHeight() - 4) < (to.getY() - (targetBounds.getHeight() / 2))) {
 +						// edge going from right to left circumventing the model on the upper side
++						edge.setType(JmtEdge.Type.LOOP_BACK_UPPER);
  						routed = new Point2D[4];
  						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
  						routed[3] = new Point2D.Double(boundTo + (offsetTo2), to.getY());
@@ -973,7 +1097,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +
 +						double minY;
 +						if (outPorts.size() > 1) {
-+							Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
++							Map<Boolean, List<OutputPort>> parts = partition(new Predicate<OutputPort>() {
 +								@Override
 +								public boolean evaluate(OutputPort v) {
 +									JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
@@ -1021,10 +1145,11 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  					} else {
 -
 +						// edge going from right to left circumventing the model on the lower side
++						edge.setType(JmtEdge.Type.LOOP_BACK_LOWER);
  						routed = new Point2D[4];
  						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
  						//System.out.println("Differenza "+ (sourceBounds.getMaxY()-(routed[0].getY() + sourceBounds.getBounds().getHeight()+2)));
-@@ -202,7 +296,33 @@
+@@ -202,7 +300,33 @@
  						routed[3] = new Point2D.Double(boundTo + offsetTo2, to.getY());
  						//double maxY = Math.max(routed[0].getY() + sourceBounds.getBounds().getHeight()+2,
  						//		routed[3].getY() + targetBounds.getBounds().getHeight()+8);
@@ -1042,7 +1167,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +
 +						double maxY;
 +						if (outPorts.size() > 1) {
-+							Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
++							Map<Boolean, List<OutputPort>> parts = partition(new Predicate<OutputPort>() {
 +								@Override
 +								public boolean evaluate(OutputPort v) {
 +									JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
@@ -1059,7 +1184,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
  						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
  
-@@ -238,18 +358,324 @@
+@@ -238,18 +362,416 @@
  					}
  				}
  			}
@@ -1084,7 +1209,47 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +				double division = sourceSize.getHeight() / (source.numOutEdges() + 1.0);
 +				double divisionOffset = source.getOutPortoffset(i, d).getY() * 2 / (source.numOutEdges() + 1.0);
 +
-+				Collections.sort(outPorts, new Comparator<OutputPort>() {
++
++				Map<Boolean, List<OutputPort>> parts = partition(new Predicate<OutputPort>() {
++					@Override
++					public boolean evaluate(OutputPort v) {
++						if (v.getEdges().size() > 0) {
++							JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++							return e.getType() == JmtEdge.Type.LOOP_BACK_UPPER;
++						}
++						return false;
++					}
++				}, outPorts);
++
++				List<OutputPort> portsLoopBackUpper = parts.get(true);
++
++				Collections.sort(portsLoopBackUpper, new Comparator<OutputPort>() {
++					@Override
++					public int compare(OutputPort o1, OutputPort o2) {
++						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
++						JmtEdge e2 = (JmtEdge) (o2.getEdges().iterator().next());
++
++						JmtCell c1 = (JmtCell) ((InputPort) e1.getTarget()).getParent();
++						JmtCell c2 = (JmtCell) ((InputPort) e2.getTarget()).getParent();
++
++						return (int) Math.ceil(((Rectangle2D) c2.getAttributes().get("bounds")).getMaxX() - ((Rectangle2D) c1.getAttributes().get("bounds")).getMaxX());
++					}
++				});
++
++				parts = partition(new Predicate<OutputPort>() {
++					@Override
++					public boolean evaluate(OutputPort v) {
++						if (v.getEdges().size() > 0) {
++							JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++							return e.getType() == JmtEdge.Type.LEFT_TO_RIGHT;
++						}
++						return false;
++					}
++				}, parts.get(false));
++
++				List<OutputPort> portsLeftToRight = parts.get(true);
++
++				Collections.sort(portsLeftToRight, new Comparator<OutputPort>() {
 +					@Override
 +					public int compare(OutputPort o1, OutputPort o2) {
 +						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
@@ -1097,8 +1262,37 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					}
 +				});
 +
-+				// modify X coordinate of points aligned to matching output port in order to avoid overlap of edges going in the same vertical direction
-+				double sOutOffsY = -1;
++				parts = partition(new Predicate<OutputPort>() {
++					@Override
++					public boolean evaluate(OutputPort v) {
++						if (v.getEdges().size() > 0) {
++							JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++							return e.getType() == JmtEdge.Type.LOOP_BACK_LOWER;
++						}
++						return false;
++					}
++				}, parts.get(false));
++
++				List<OutputPort> portsLoopBackLower = parts.get(true);
++
++				Collections.sort(portsLoopBackLower, new Comparator<OutputPort>() {
++					@Override
++					public int compare(OutputPort o1, OutputPort o2) {
++						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
++						JmtEdge e2 = (JmtEdge) (o2.getEdges().iterator().next());
++
++						JmtCell c1 = (JmtCell) ((InputPort) e1.getTarget()).getParent();
++						JmtCell c2 = (JmtCell) ((InputPort) e2.getTarget()).getParent();
++
++						return (int) Math.ceil(((Rectangle2D) c1.getAttributes().get("bounds")).getMaxX() - ((Rectangle2D) c2.getAttributes().get("bounds")).getMaxX());
++					}
++				});
++
++				outPorts.clear();
++				outPorts.addAll(portsLoopBackUpper);
++				outPorts.addAll(portsLeftToRight);
++				outPorts.addAll(portsLoopBackLower);
++
 +				for (int index = 0; index < outPorts.size(); index++) {
 +					OutputPort outPort = outPorts.get(index);
 +					JmtEdge outEdge = (JmtEdge) (outPort.getEdges().iterator().next());
@@ -1106,7 +1300,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					if (targetO == target) {
 +						startY = sourceBounds.getMinY() + (division * (index + 1));
 +						routed[0].setLocation(routed[0].getX(), startY);
-+						sOutOffsY = divisionOffset * (index + 1);
 +					}
 +
 +					Point2D portOffset = source.isLeftInputCell() ? source.getOutPortoffset(i, d) : source.getInPortOffset(i, d);
@@ -1143,25 +1336,37 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +									if (dir == 1 && (otherPoints.get(io).getY() == otherPoints.get(io + 1).getY() && (otherPoints.get(io).getY() == routed[ir].getY()))) {
 +										Interval interval = new Interval(routed[ir].getX(), routed[ir + 1].getX());
 +										if (interval.contains(otherPoints.get(io).getX()) || interval.contains(otherPoints.get(io + 1).getX())) {
-+											if (ir > 1) {
-+												routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() - offset);
-+												routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() - offset);
++											int sign;
++											if (ir > 1 && target.isLeftInputCell()) {
++												sign = -1;
++											} else if (ir > 1 && !target.isLeftInputCell()) {
++												sign = 1;
++											} else if (target.isLeftInputCell()) {
++												sign = 1;
 +											} else {
-+												routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() + offset);
-+												routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() + offset);
++												sign = -1;
 +											}
++
++											routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() + sign * offset);
++											routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() + sign * offset);
 +											needRecompute = true;
 +										}
 +									} else if (dir == 2 && (otherPoints.get(io).getX() == otherPoints.get(io + 1).getX() && (otherPoints.get(io).getX() == routed[ir].getX()))) {
 +										Interval interval = new Interval(routed[ir].getY(), routed[ir + 1].getY());
 +										if (interval.contains(otherPoints.get(io).getY()) || interval.contains(otherPoints.get(io + 1).getY())) {
-+											if (ir > 1) {
-+												routed[ir].setLocation(routed[ir].getX() - offset, routed[ir].getY());
-+												routed[ir + 1].setLocation(routed[ir + 1].getX() - offset, routed[ir + 1].getY());
++											int sign;
++											if (ir > 1 && target.isLeftInputCell()) {
++												sign = -1;
++											} else if (ir > 1 && !target.isLeftInputCell()) {
++												sign = 1;
++											} else if (target.isLeftInputCell()) {
++												sign = 1;
 +											} else {
-+												routed[ir].setLocation(routed[ir].getX() + offset, routed[ir].getY());
-+												routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY());
++												sign = -1;
 +											}
++
++											routed[ir].setLocation(routed[ir].getX() + sign * offset, routed[ir].getY());
++											routed[ir + 1].setLocation(routed[ir + 1].getX() + sign * offset, routed[ir + 1].getY());
 +											needRecompute = true;
 +										}
 +									}
@@ -1170,31 +1375,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +						}
 +					}
 +				}
-+
-+				/*if (outPorts.size() > 1) {
-+					final double sourceOutOffsetY = sOutOffsY; // resolve stupid constraint on final variables in Java pre-8 "closures"
-+					if (routed[1].getY() < routed[0].getY()) {
-+						// edge is going up
-+						Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
-+							@Override
-+							public boolean evaluate(OutputPort v) {
-+								return ((Point2D.Double) v.getAttributes().get("offset")).getY() <= sourceOutOffsetY;
-+							}
-+						}, outPorts);
-+						routed[0].setLocation(routed[0].getX() + offset * (parts.get(true).size() - 1), routed[0].getY());
-+						routed[1].setLocation(routed[0].getX(), routed[1].getY());
-+					} else if (routed[1].getY() > routed[0].getY()) {
-+						// edge is going down
-+						Map<Boolean, Collection<OutputPort>> parts = partition(new Predicate<OutputPort>() {
-+							@Override
-+							public boolean evaluate(OutputPort v) {
-+								return ((Point2D.Double) v.getAttributes().get("offset")).getY() >= sourceOutOffsetY;
-+							}
-+						}, outPorts);
-+						routed[0].setLocation(routed[0].getX() + offset * (parts.get(true).size() - 1), routed[0].getY());
-+						routed[1].setLocation(routed[0].getX(), routed[1].getY());
-+					}
-+				}*/
 + 			}
 +
 +			double finalY = to.getY();
@@ -1217,7 +1397,47 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +				double division = targetSize.getHeight() / (target.numInEdges() + 1.0);
 +				double divisionOffset = target.getInPortOffset(i, d).getY() * 2 / (target.numInEdges() + 1.0);
 +
-+				Collections.sort(inPorts, new Comparator<InputPort>() {
++				Map<Boolean, List<InputPort>> parts = partition(new Predicate<InputPort>() {
++					@Override
++					public boolean evaluate(InputPort v) {
++						if (v.getEdges().size() > 0) {
++							JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++							return e.getType() == JmtEdge.Type.LOOP_BACK_UPPER;
++						}
++						return false;
++					}
++				}, inPorts);
++
++				List<InputPort> portsLoopBackUpper = parts.get(true);
++
++				Collections.sort(portsLoopBackUpper, new Comparator<InputPort>() {
++					@Override
++					public int compare(InputPort o1, InputPort o2) {
++						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
++						JmtEdge e2 = (JmtEdge) (o2.getEdges().iterator().next());
++
++						JmtCell c1 = (JmtCell) ((OutputPort) e1.getSource()).getParent();
++						JmtCell c2 = (JmtCell) ((OutputPort) e2.getSource()).getParent();
++
++						return (int) Math.ceil(((Rectangle2D) c2.getAttributes().get("bounds")).getMaxY() - ((Rectangle2D) c1.getAttributes().get("bounds")).getMaxY());
++					}
++				});
++
++
++				parts = partition(new Predicate<InputPort>() {
++					@Override
++					public boolean evaluate(InputPort v) {
++						if (v.getEdges().size() > 0) {
++							JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++							return e.getType() == JmtEdge.Type.LEFT_TO_RIGHT;
++						}
++						return false;
++					}
++				}, parts.get(false));
++
++				List<InputPort> portsLeftToRight = parts.get(true);
++
++				Collections.sort(portsLeftToRight, new Comparator<InputPort>() {
 +					@Override
 +					public int compare(InputPort o1, InputPort o2) {
 +						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
@@ -1230,7 +1450,37 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					}
 +				});
 +
-+				double sInOffsY = -1;
++				parts = partition(new Predicate<InputPort>() {
++					@Override
++					public boolean evaluate(InputPort v) {
++						if (v.getEdges().size() > 0) {
++							JmtEdge e = (JmtEdge) (v.getEdges().iterator().next());
++							return e.getType() == JmtEdge.Type.LOOP_BACK_LOWER;
++						}
++						return false;
++					}
++				}, parts.get(false));
++
++				List<InputPort> portsLoopBackLower = parts.get(true);
++
++				Collections.sort(portsLoopBackLower, new Comparator<InputPort>() {
++					@Override
++					public int compare(InputPort o1, InputPort o2) {
++						JmtEdge e1 = (JmtEdge) (o1.getEdges().iterator().next());
++						JmtEdge e2 = (JmtEdge) (o2.getEdges().iterator().next());
++
++						JmtCell c1 = (JmtCell) ((OutputPort) e1.getSource()).getParent();
++						JmtCell c2 = (JmtCell) ((OutputPort) e2.getSource()).getParent();
++
++						return (int) Math.ceil(((Rectangle2D) c2.getAttributes().get("bounds")).getMaxY() - ((Rectangle2D) c1.getAttributes().get("bounds")).getMaxY());
++					}
++				});
++
++				inPorts.clear();
++				inPorts.addAll(portsLoopBackUpper);
++				inPorts.addAll(portsLeftToRight);
++				inPorts.addAll(portsLoopBackLower);
++
 +				for (int index = 0; index < inPorts.size(); index++) {
 +					InputPort inPort = inPorts.get(index);
 +					JmtEdge inEdge = (JmtEdge) (inPort.getEdges().iterator().next());
@@ -1238,7 +1488,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					if (sourceI == source) {
 +						finalY = targetBounds.getMinY() + (division * (index + 1));
 +						routed[routed.length - 1] = new Point2D.Double(routed[routed.length - 1].getX(), finalY);
-+						sInOffsY = divisionOffset * (index + 1);
 +					}
 +
 +					Point2D portOffset = target.isLeftInputCell() ? target.getInPortOffset(i, d) : target.getOutPortoffset(i, d);
@@ -1276,10 +1525,14 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +										Interval interval = new Interval(routed[ir].getX(), routed[ir + 1].getX());
 +										if (interval.contains(otherPoints.get(io).getX()) || interval.contains(otherPoints.get(io + 1).getX())) {
 +											int sign;
-+											if (ir > 1) {
++											if (ir > 1 && target.isLeftInputCell()) {
 +												sign = -1;
-+											} else {
++											} else if (ir > 1 && !target.isLeftInputCell()) {
 +												sign = 1;
++											} else if (target.isLeftInputCell()) {
++												sign = 1;
++											} else {
++												sign = -1;
 +											}
 +											routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() + sign * offset);
 +											routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() + sign *offset);
@@ -1289,10 +1542,14 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +										Interval interval = new Interval(routed[ir].getY(), routed[ir + 1].getY());
 +										if (interval.contains(otherPoints.get(io).getY()) || interval.contains(otherPoints.get(io + 1).getY())) {
 +											int sign;
-+											if (ir > 1) {
++											if (ir > 1 && target.isLeftInputCell()) {
 +												sign = -1;
-+											} else {
++											} else if (ir > 1 && !target.isLeftInputCell()) {
 +												sign = 1;
++											} else if (target.isLeftInputCell()) {
++												sign = 1;
++											} else {
++												sign = -1;
 +											}
 +											routed[ir].setLocation(routed[ir].getX() + sign * offset, routed[ir].getY());
 +											routed[ir + 1].setLocation(routed[ir + 1].getX() + sign * offset, routed[ir + 1].getY());
@@ -1304,46 +1561,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +						}
 +					}
 +				}
-+
-+				/*if (inPorts.size() > 1) {
-+					double factor = 1;
-+					final double targetInOffsetY = sInOffsY; // resolve stupid constraint on final variables in Java pre-8 "closures"
-+					if (routed[routed.length - 1].getY() < routed[routed.length - 2].getY()) {
-+						// edge is going up
-+						Map<Boolean, Collection<InputPort>> parts = partition(new Predicate<InputPort>() {
-+							@Override
-+							public boolean evaluate(InputPort v) {
-+								return ((Point2D.Double) v.getAttributes().get("offset")).getY() >= targetInOffsetY;
-+							}
-+						}, inPorts);
-+
-+						// if edge is coming from the left invert sign of offset
-+						if (routed.length > 2 && routed[routed.length - 1].getX() < routed[routed.length - 3].getX()) {
-+							factor = -1;
-+						}
-+
-+						routed[routed.length - 1].setLocation(routed[routed.length - 1].getX() + factor * offset * (parts.get(false).size()), routed[routed.length - 1].getY());
-+						routed[routed.length - 2].setLocation(routed[routed.length - 1].getX(), routed[routed.length - 2].getY());
-+
-+					} else if (routed[routed.length - 1].getY() > routed[routed.length - 2].getY()) {
-+						// edge is going down
-+						Map<Boolean, Collection<InputPort>> parts = partition(new Predicate<InputPort>() {
-+							@Override
-+							public boolean evaluate(InputPort v) {
-+								return ((Point2D.Double) v.getAttributes().get("offset")).getY() <= targetInOffsetY;
-+							}
-+						}, inPorts);
-+
-+						if (routed.length > 2 && routed[routed.length - 1].getX() < routed[routed.length - 3].getX()) {
-+							factor = -1;
-+						}
-+
-+						routed[routed.length - 1].setLocation(routed[routed.length - 1].getX() + factor * offset * (parts.get(false).size()), routed[routed.length - 1].getY());
-+						routed[routed.length - 2].setLocation(routed[routed.length - 1].getX(), routed[routed.length - 2].getY());
-+					}
-+				}*/
-+
-+
 +			}
 +
 +			/*if (target.isLeftInputCell() && (routed[routed.length - 1].getX() > (targetBounds.getMinX() - offset)) && routed.length > 1 && routed[routed.length - 1] != null && routed[routed.length - 2] != null) {
@@ -2499,6 +2716,128 @@ Index: src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java
  		}
  
  		public void focusLost(FocusEvent e) {
+Index: src/main/java/jmt/gui/jsimgraph/panels/TemplateAddingPanel.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/panels/TemplateAddingPanel.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/panels/TemplateAddingPanel.java	(working copy)
+@@ -543,7 +543,7 @@
+ 			} catch (MalformedURLException e) {
+ 				// if the URL format is invalid, shows the err msg
+ 				publish("the URL is invalid");
+-				JOptionPane.showMessageDialog(parent, "Invalid URL");
++				JOptionPane.showMessageDialog(parent, "INVALID URL");
+ 				Thread.sleep(1000);
+ 				publish("");
+ 			} catch (IOException e) {
+Index: src/main/java/jmt/gui/jwat/trafficAnalysis/utils/Loader.java
+===================================================================
+--- src/main/java/jmt/gui/jwat/trafficAnalysis/utils/Loader.java	(revision 978)
++++ src/main/java/jmt/gui/jwat/trafficAnalysis/utils/Loader.java	(working copy)
+@@ -213,7 +213,7 @@
+ 				if (defaultFilter.accept(getSelectedFile())) {
+ 					super.approveSelection();
+ 				} else {
+-					JOptionPane.showMessageDialog(this, "Invalid Extension\nSelect only *.log files", "Invalid Extension", JOptionPane.ERROR_MESSAGE);
++					JOptionPane.showMessageDialog(this, "INVALID Extension\nSelect only *.log files", "INVALID Extension", JOptionPane.ERROR_MESSAGE);
+ 				}
+ 
+ 			}
+Index: src/main/java/jmt/jmva/analytical/solvers/Basis/BTFCoMoMBasis.java
+===================================================================
+--- src/main/java/jmt/jmva/analytical/solvers/Basis/BTFCoMoMBasis.java	(revision 978)
++++ src/main/java/jmt/jmva/analytical/solvers/Basis/BTFCoMoMBasis.java	(working copy)
+@@ -41,7 +41,7 @@
+ 		int population_position = order.indexOf(n);
+ 		int queue_added = m;
+ 
+-		if (population_position == -1) throw new InternalErrorException("Invalid PopulationChangeVector:" + n);
++		if (population_position == -1) throw new InternalErrorException("INVALID PopulationChangeVector:" + n);
+ 
+ 		//No queues added, constant is in Lambda_Y
+ 		if (queue_added == 0) {
+Index: src/main/java/jmt/jmva/analytical/solvers/Basis/CoMoMBasis.java
+===================================================================
+--- src/main/java/jmt/jmva/analytical/solvers/Basis/CoMoMBasis.java	(revision 978)
++++ src/main/java/jmt/jmva/analytical/solvers/Basis/CoMoMBasis.java	(working copy)
+@@ -101,7 +101,7 @@
+ 	 */
+ 	public int indexOf(PopulationChangeVector n, int m) throws InternalErrorException {
+ 		int population_position = order.indexOf(n);
+-		if (population_position == -1) throw new InternalErrorException("Invalid PopulationChangeVector");
++		if (population_position == -1) throw new InternalErrorException("INVALID PopulationChangeVector");
+ 
+ 		//order multiplicities 0,1,2,3,...M
+ 		return population_position*(qnm.M + 1) + m;
+Index: src/main/java/jmt/jmva/analytical/solvers/Basis/CoMoMBasisMLorder.java
+===================================================================
+--- src/main/java/jmt/jmva/analytical/solvers/Basis/CoMoMBasisMLorder.java	(revision 978)
++++ src/main/java/jmt/jmva/analytical/solvers/Basis/CoMoMBasisMLorder.java	(working copy)
+@@ -40,7 +40,7 @@
+ 		int population_position = order.indexOf(n);
+ 		int queue_added = m;
+ 
+-		if (population_position == -1) throw new InternalErrorException("Invalid PopulationChangeVector");
++		if (population_position == -1) throw new InternalErrorException("INVALID PopulationChangeVector");
+ 
+ 		if (queue_added == 0) {
+ 			return MiscFunctions.binomialCoefficient(M + R - 1 , M)*M + population_position;
+Index: src/main/java/jmt/jmva/commandline/JMVASolver.java
+===================================================================
+--- src/main/java/jmt/jmva/commandline/JMVASolver.java	(revision 978)
++++ src/main/java/jmt/jmva/commandline/JMVASolver.java	(working copy)
+@@ -48,7 +48,7 @@
+ 		}
+ 		File model = new File(args[0]);
+ 		if (!model.isFile()) {
+-			System.err.print("Invalid model file: " + model.getAbsolutePath());
++			System.err.print("INVALID model file: " + model.getAbsolutePath());
+ 			System.exit(1);
+ 		}
+ 
+Index: src/main/java/jmt/jmva/gui/exact/panels/AMVAPanel.java
+===================================================================
+--- src/main/java/jmt/jmva/gui/exact/panels/AMVAPanel.java	(revision 978)
++++ src/main/java/jmt/jmva/gui/exact/panels/AMVAPanel.java	(working copy)
+@@ -328,7 +328,7 @@
+ 			ew.getData().setTolerance(tol);
+ 		}
+ 		else {
+-			JOptionPane.showMessageDialog(ew, "Error: Invalid tolerance value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
++			JOptionPane.showMessageDialog(ew, "Error: INVALID tolerance value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
+ 		}
+ 	}
+ 
+@@ -338,7 +338,7 @@
+         if (mSamples != null) {
+             model.setMaxSamples(mSamples);
+         } else {
+-            JOptionPane.showMessageDialog(ew, "Error: Invalid max samples value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
++            JOptionPane.showMessageDialog(ew, "Error: INVALID max samples value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
+         }
+     }
+ 
+Index: src/main/java/jmt/jmva/gui/exact/panels/WhatIfPanel.java
+===================================================================
+--- src/main/java/jmt/jmva/gui/exact/panels/WhatIfPanel.java	(revision 978)
++++ src/main/java/jmt/jmva/gui/exact/panels/WhatIfPanel.java	(working copy)
+@@ -543,7 +543,7 @@
+ 							data.setWhatifAlgorithmTolerance(algorithm, tol);
+ 						}
+ 						else {
+-							JOptionPane.showMessageDialog(WhatIfPanel.this, "Error: Invalid tolerance value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
++							JOptionPane.showMessageDialog(WhatIfPanel.this, "Error: INVALID tolerance value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
+ 						}
+ 					}
+ 					
+@@ -562,7 +562,7 @@
+ 								data.setWhatifAlgorithmTolerance(algorithm, tol);
+ 							}
+ 							else {
+-								JOptionPane.showMessageDialog(WhatIfPanel.this, "Error: Invalid tolerance value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
++								JOptionPane.showMessageDialog(WhatIfPanel.this, "Error: INVALID tolerance value. Using last valid value.", "Input data error", JOptionPane.ERROR_MESSAGE);
+ 							}
+ 						}
+ 					}
 Index: src/main/resources/jmt/common/xml/JModelGUI.xsd
 ===================================================================
 --- src/main/resources/jmt/common/xml/JModelGUI.xsd	(revision 978)
@@ -2511,3 +2850,34 @@ Index: src/main/resources/jmt/common/xml/JModelGUI.xsd
  								</xs:complexType>
  							</xs:element>
  						</xs:sequence>
+Index: src/test/java/jmt/util/Jmt.java
+===================================================================
+--- src/test/java/jmt/util/Jmt.java	(revision 978)
++++ src/test/java/jmt/util/Jmt.java	(working copy)
+@@ -96,7 +96,7 @@
+ 			File result = new File(args[1]+"-result.jmva");
+ 			
+ 			if (!model.isFile()) {
+-				System.err.print("Invalid model file: " + model.getAbsolutePath());
++				System.err.print("INVALID model file: " + model.getAbsolutePath());
+ 				System.exit(1);
+ 			}
+ 
+@@ -147,7 +147,7 @@
+ 				try {
+ 					dispatcher.setSimulationSeed(Long.parseLong(options.get(OPTION_SEED)));
+ 				} catch (NumberFormatException ex) {
+-					System.err.println("Invalid simulation seed. Should be a number.");
++					System.err.println("INVALID simulation seed. Should be a number.");
+ 					System.exit(1);
+ 				}
+ 			}
+@@ -156,7 +156,7 @@
+ 				try {
+ 					dispatcher.setSimulationMaxDuration(Long.parseLong(options.get(OPTION_MAXTIME)) * 1000);
+ 				} catch (NumberFormatException ex) {
+-					System.err.println("Invalid maximum simulation time. Should be a number.");
++					System.err.println("INVALID maximum simulation time. Should be a number.");
+ 					System.exit(1);
+ 				}	
+ 			}
