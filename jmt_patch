@@ -738,6 +738,35 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +     */
 +    public abstract String getIcon();
  }
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java	(working copy)
+@@ -68,6 +68,7 @@
+ 	protected Point2D intersectionPoint = null;
+ 	private Mediator mediator;
+ 	public ArrayList<Point2D> intersectionEdgePoint = new ArrayList<Point2D>();
++	private List<Point2D> routedPoints = new ArrayList<>();
+ 
+ 	//    public ArrayList intersectionEdgePoint2=new ArrayList();
+ 
+@@ -767,4 +768,16 @@
+ 		return (int) (max - boundsSource.getMaxX());
+ 	}
+ 
++	public void setRoutedPoints(List<Point2D> points) {
++		routedPoints.clear();
++		routedPoints.addAll(points);
++	}
++
++
++	public List<Point2D> getRoutedPoints() {
++		return routedPoints;
++	}
++
++
++
+ }
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java	(revision 978)
@@ -811,7 +840,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java	(working copy)
-@@ -18,11 +18,15 @@
+@@ -18,18 +18,21 @@
  
  package jmt.gui.jsimgraph.JGraphMod;
  
@@ -823,14 +852,15 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +import java.util.*;
  import java.util.List;
  
+-import org.jgraph.graph.CellView;
+-import org.jgraph.graph.DefaultPort;
+-import org.jgraph.graph.Edge;
+-import org.jgraph.graph.EdgeView;
+-import org.jgraph.graph.GraphConstants;
+-import org.jgraph.graph.PortView;
 +import jmt.gui.common.JMTImageLoader;
 +import jmt.gui.jsimgraph.controller.Mediator;
- import org.jgraph.graph.CellView;
- import org.jgraph.graph.DefaultPort;
- import org.jgraph.graph.Edge;
-@@ -30,6 +34,10 @@
- import org.jgraph.graph.GraphConstants;
- import org.jgraph.graph.PortView;
++import org.jgraph.graph.*;
  
 +import javax.print.attribute.standard.Media;
 +import javax.swing.*;
@@ -839,11 +869,25 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  /**
  
   * @author Federico Granata
-@@ -41,6 +49,26 @@
+@@ -41,6 +44,40 @@
   */
  public class JmtRouting implements Edge.Routing {
  
 +	Mediator mediator;
++
++	class Interval {
++		private double lower;
++		private double upper;
++
++		public Interval(double b1, double b2) {
++			lower = b1 <= b2 ? b1 : b2;
++			upper = b1 <= b2 ? b2 : b1;
++		}
++
++		public boolean contains(double p) {
++			return p >= lower && p <= upper;
++		}
++	}
 +
 +	interface Predicate<T> {
 +		boolean evaluate(T v);
@@ -866,7 +910,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  	private static final long serialVersionUID = 1L;
  	private int offset = 15; //offset per il source
  	private int offsetTo2 = -15; //offset per il target
-@@ -65,20 +93,20 @@
+@@ -65,20 +102,20 @@
  
  			Point2D[] routed;
  			int offset = this.offset;
@@ -892,7 +936,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  			if (!source.isLeftInputCell()) {
  				offset = -offset;
  				//ringOffset=-ringOffset;
-@@ -110,10 +138,10 @@
+@@ -110,10 +147,10 @@
  				}
  				if ((((boundTo - boundFrom) > offset * (1.1)) && (offset > 0 && offsetTo2 < 0))
  						|| (((boundFrom - boundTo) > (-offset * (1.1))) && (offset < 0 && offsetTo2 > 0))) {
@@ -904,7 +948,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  				}
  				//____________inizio
  				else if ((offset < 0 && offsetTo2 < 0)) {
-@@ -188,14 +216,71 @@
+@@ -188,14 +225,71 @@
  				} else {
  
  					if ((from.getY() + sourceBounds.getHeight() - 4) < (to.getY() - (targetBounds.getHeight() / 2))) {
@@ -980,7 +1024,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed = new Point2D[4];
  						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
  						//System.out.println("Differenza "+ (sourceBounds.getMaxY()-(routed[0].getY() + sourceBounds.getBounds().getHeight()+2)));
-@@ -202,7 +287,33 @@
+@@ -202,7 +296,33 @@
  						routed[3] = new Point2D.Double(boundTo + offsetTo2, to.getY());
  						//double maxY = Math.max(routed[0].getY() + sourceBounds.getBounds().getHeight()+2,
  						//		routed[3].getY() + targetBounds.getBounds().getHeight()+8);
@@ -1015,7 +1059,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
  						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
  
-@@ -238,18 +349,211 @@
+@@ -238,18 +358,324 @@
  					}
  				}
  			}
@@ -1074,6 +1118,60 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +				}
 +
 +				if (outPorts.size() > 1) {
++					boolean needRecompute = true;
++					while (needRecompute) {
++						needRecompute = false;
++						for (int index = 0; index < outPorts.size(); index++) {
++							OutputPort outPort = outPorts.get(index);
++							if (outPort.getEdges().size() == 0) {
++								continue;
++							}
++							JmtEdge otherEdge = (JmtEdge) outPort.getEdges().iterator().next();
++							if (((DefaultPort) otherEdge.getSource()).getParent() == source && ((DefaultPort)otherEdge.getTarget()).getParent() == target) {
++								continue;
++							}
++
++							List<Point2D> otherPoints = otherEdge.getRoutedPoints();
++							for (int ir = 0; ir < (routed.length - 1); ir++) {
++								int dir;
++								if (routed[ir].getY() == routed[ir + 1].getY()) {
++									dir = 1;
++								} else {
++									dir = 2;
++								}
++								for (int io = 0; io < (otherPoints.size() - 1); io++) {
++									if (dir == 1 && (otherPoints.get(io).getY() == otherPoints.get(io + 1).getY() && (otherPoints.get(io).getY() == routed[ir].getY()))) {
++										Interval interval = new Interval(routed[ir].getX(), routed[ir + 1].getX());
++										if (interval.contains(otherPoints.get(io).getX()) || interval.contains(otherPoints.get(io + 1).getX())) {
++											if (ir > 1) {
++												routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() - offset);
++												routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() - offset);
++											} else {
++												routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() + offset);
++												routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() + offset);
++											}
++											needRecompute = true;
++										}
++									} else if (dir == 2 && (otherPoints.get(io).getX() == otherPoints.get(io + 1).getX() && (otherPoints.get(io).getX() == routed[ir].getX()))) {
++										Interval interval = new Interval(routed[ir].getY(), routed[ir + 1].getY());
++										if (interval.contains(otherPoints.get(io).getY()) || interval.contains(otherPoints.get(io + 1).getY())) {
++											if (ir > 1) {
++												routed[ir].setLocation(routed[ir].getX() - offset, routed[ir].getY());
++												routed[ir + 1].setLocation(routed[ir + 1].getX() - offset, routed[ir + 1].getY());
++											} else {
++												routed[ir].setLocation(routed[ir].getX() + offset, routed[ir].getY());
++												routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY());
++											}
++											needRecompute = true;
++										}
++									}
++								}
++							}
++						}
++					}
++				}
++
++				/*if (outPorts.size() > 1) {
 +					final double sourceOutOffsetY = sOutOffsY; // resolve stupid constraint on final variables in Java pre-8 "closures"
 +					if (routed[1].getY() < routed[0].getY()) {
 +						// edge is going up
@@ -1096,7 +1194,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +						routed[0].setLocation(routed[0].getX() + offset * (parts.get(true).size() - 1), routed[0].getY());
 +						routed[1].setLocation(routed[0].getX(), routed[1].getY());
 +					}
-+				}
++				}*/
 + 			}
 +
 +			double finalY = to.getY();
@@ -1152,6 +1250,62 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +				}
 +
 +				if (inPorts.size() > 1) {
++					boolean needRecompute = true;
++					while (needRecompute) {
++						needRecompute = false;
++						for (int index = 0; index < inPorts.size(); index++) {
++							InputPort inPort = inPorts.get(index);
++							if (inPort.getEdges().size() == 0) {
++								continue;
++							}
++							JmtEdge otherEdge = (JmtEdge) inPort.getEdges().iterator().next();
++							if (((DefaultPort) otherEdge.getSource()).getParent() == source && ((DefaultPort)otherEdge.getTarget()).getParent() == target) {
++								continue;
++							}
++
++							List<Point2D> otherPoints = otherEdge.getRoutedPoints();
++							for (int ir = 0; ir < (routed.length - 1); ir++) {
++								int dir;
++								if (routed[ir].getY() == routed[ir + 1].getY()) {
++									dir = 1;
++								} else {
++									dir = 2;
++								}
++								for (int io = 0; io < (otherPoints.size() - 1); io++) {
++									if (dir == 1 && (otherPoints.get(io).getY() == otherPoints.get(io + 1).getY() && (otherPoints.get(io).getY() == routed[ir].getY()))) {
++										Interval interval = new Interval(routed[ir].getX(), routed[ir + 1].getX());
++										if (interval.contains(otherPoints.get(io).getX()) || interval.contains(otherPoints.get(io + 1).getX())) {
++											int sign;
++											if (ir > 1) {
++												sign = -1;
++											} else {
++												sign = 1;
++											}
++											routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() + sign * offset);
++											routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() + sign *offset);
++											needRecompute = true;
++										}
++									} else if (dir == 2 && (otherPoints.get(io).getX() == otherPoints.get(io + 1).getX() && (otherPoints.get(io).getX() == routed[ir].getX()))) {
++										Interval interval = new Interval(routed[ir].getY(), routed[ir + 1].getY());
++										if (interval.contains(otherPoints.get(io).getY()) || interval.contains(otherPoints.get(io + 1).getY())) {
++											int sign;
++											if (ir > 1) {
++												sign = -1;
++											} else {
++												sign = 1;
++											}
++											routed[ir].setLocation(routed[ir].getX() + sign * offset, routed[ir].getY());
++											routed[ir + 1].setLocation(routed[ir + 1].getX() + sign * offset, routed[ir + 1].getY());
++											needRecompute = true;
++										}
++									}
++								}
++							}
++						}
++					}
++				}
++
++				/*if (inPorts.size() > 1) {
 +					double factor = 1;
 +					final double targetInOffsetY = sInOffsY; // resolve stupid constraint on final variables in Java pre-8 "closures"
 +					if (routed[routed.length - 1].getY() < routed[routed.length - 2].getY()) {
@@ -1187,10 +1341,12 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +						routed[routed.length - 1].setLocation(routed[routed.length - 1].getX() + factor * offset * (parts.get(false).size()), routed[routed.length - 1].getY());
 +						routed[routed.length - 2].setLocation(routed[routed.length - 1].getX(), routed[routed.length - 2].getY());
 +					}
-+				}
++				}*/
++
++
 +			}
 +
-+			if (target.isLeftInputCell() && (routed[routed.length - 1].getX() > (targetBounds.getMinX() - offset)) && routed.length > 1 && routed[routed.length - 1] != null && routed[routed.length - 2] != null) {
++			/*if (target.isLeftInputCell() && (routed[routed.length - 1].getX() > (targetBounds.getMinX() - offset)) && routed.length > 1 && routed[routed.length - 1] != null && routed[routed.length - 2] != null) {
 +				routed[routed.length - 1].setLocation(routed[routed.length - 1].getX() - 2 * Math.max(offset, routed[routed.length - 1].getX() - targetBounds.getMinX()), routed[routed.length - 1].getY());
 +
 +				Point2D newRouted[] = new Point2D[routed.length + 2];
@@ -1209,7 +1365,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +
 +				routed = newRouted;
 +
-+			}
++			}*/
 +
  			//Sets add points
 -			list.add(from);
@@ -1220,6 +1376,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +			list.add(new Point2D.Double(from.getX(), startY));
 +			Collections.addAll(list, routed);
 +			list.add(new Point2D.Double(to.getX(), finalY));
++			edge.setRoutedPoints(list);
  		}
  		return list;
  	}
@@ -2065,7 +2222,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -3349,4 +3420,123 @@
+@@ -3349,4 +3420,185 @@
  		}
  	}
  
@@ -2107,7 +2264,6 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +						if (euclideanDist < minDistance) {
 +							minDistance = euclideanDist;
 +							slope = (repositionedBounds.getY() - cellsBounds[i].getY()) / (repositionedBounds.getX() - cellsBounds[i].getX());
-+							//slope = (cellsBounds[i].getY() - repositionedBounds.getY()) / (cellsBounds[i].getX() - repositionedBounds.getX());
 +							minIndex = i;
 +						}
 +					}
@@ -2159,34 +2315,97 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +	}
 +
 +	public void snapToGrid() {
-+
 +		int cellSize;
 +		String size = JOptionPane.showInputDialog(mainWindow, "Please specify the cells size in pixels:");
-+		try {
-+			cellSize = Integer.parseInt(size);
-+			if (cellSize <= 0) {
++		if (size != null) {
++			try {
++				cellSize = Integer.parseInt(size);
++				if (cellSize <= 0) {
++					cellSize = 50;
++				}
++			} catch (NumberFormatException e) {
 +				cellSize = 50;
 +			}
-+		} catch (NumberFormatException e) {
-+			cellSize = 50;
++
++			Object[] cells = graph.getDescendants(graph.getRoots());
++
++			for (Object cell : cells) {
++				if (cell instanceof JmtCell) {
++					JmtCell jcell = (JmtCell) cell;
++					if (!jcell.isPinned()) {
++						Rectangle2D bounds = GraphConstants.getBounds(jcell.getAttributes()).getBounds();
++						bounds.setRect(Math.round(bounds.getX() / cellSize) * cellSize, Math.round(bounds.getY() / cellSize) * cellSize, bounds.getWidth(), bounds.getHeight());
++						GraphConstants.setBounds(jcell.getAttributes(), bounds);
++					}
++				}
++			}
++
++			boolean needRecompute = true;
++			while (needRecompute) {
++				needRecompute = false;
++				for (int i = 0; i < cells.length; i++) {
++					if (cells[i] instanceof JmtCell) {
++						JmtCell cell1 = (JmtCell) cells[i];
++						Rectangle2D bounds1 = GraphConstants.getBounds(cell1.getAttributes()).getBounds();
++						for (int j = i + 1; j < cells.length; j++) {
++							if (cells[j] instanceof JmtCell) {
++								JmtCell cell2 = (JmtCell) cells[j];
++								Rectangle2D bounds2 = GraphConstants.getBounds(cell2.getAttributes()).getBounds();
++								if (intersectRect(bounds1, bounds2)) {
++									if (!cell2.isPinned()) {
++										bounds2.setRect(bounds2.getX() + cellSize, bounds2.getY(), bounds2.getWidth(), bounds2.getHeight());
++										GraphConstants.setBounds(cell2.getAttributes(), bounds2);
++									} else {
++										bounds1.setRect(bounds1.getX() + cellSize, bounds1.getY(), bounds1.getWidth(), bounds1.getHeight());
++										GraphConstants.setBounds(cell1.getAttributes(), bounds1);
++									}
++									needRecompute = true;
++								}
++							}
++						}
++					}
++				}
++			}
++
++			graphRepaint();
++			graph.getGraphLayoutCache().reload();
++			avoidOverlappingCell(cells);
 +		}
++	}
 +
++	public void trySnapToGrid() {
 +		Object[] cells = graph.getDescendants(graph.getRoots());
-+
++		Rectangle2D[] cellsBounds = new Rectangle2D[cells.length];
 +		for (int i = 0; i < cells.length; i++) {
 +			if (cells[i] instanceof JmtCell) {
 +				JmtCell cell = (JmtCell) cells[i];
-+				if (!cell.isPinned()) {
-+					Rectangle2D bounds = GraphConstants.getBounds(cell.getAttributes()).getBounds();
-+					bounds.setRect(Math.ceil(bounds.getX() / cellSize) * cellSize, Math.ceil(bounds.getY() / cellSize) * cellSize, bounds.getWidth(), bounds.getHeight());
-+					GraphConstants.setBounds(cell.getAttributes(), bounds);
-+				}
++				cellsBounds[i] = GraphConstants.getBounds(cell.getAttributes()).getBounds();
 +			}
++
 +		}
 +
-+		graphRepaint();
-+		graph.getGraphLayoutCache().reload();
-+		avoidOverlappingCell(cells);
++		snapToGrid();
++
++		int result = JOptionPane.showConfirmDialog(mainWindow, "Keep the result of snap to grid?", "Snap to grid", JOptionPane.YES_NO_OPTION);
++		if (result == JOptionPane.NO_OPTION) {
++			for (int i = 0; i < cells.length; i++) {
++				if(cells[i] instanceof JmtCell) {
++					JmtCell cell = (JmtCell) cells[i];
++					GraphConstants.setBounds(cell.getAttributes(), cellsBounds[i]);
++				}
++			}
++			graphRepaint();
++			graph.getGraphLayoutCache().reload();
++			avoidOverlappingCell(cells);
++		}
++
++	}
++
++	private boolean intersectRect(Rectangle2D r1, Rectangle2D r2) {
++		return !(r2.getMinX() > r1.getMaxX() ||
++				r2.getMaxX() < r1.getMinX() ||
++				r2.getMinY() > r1.getMaxY() ||
++				r2.getMaxY() < r1.getMinY());
 +	}
  }
 Index: src/main/java/jmt/gui/jsimgraph/controller/actions/ActionSetRight.java
