@@ -237,46 +237,16 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(working copy)
-@@ -20,7 +20,11 @@
+@@ -20,7 +20,9 @@
  
  import org.jgraph.graph.Port;
  
 - /**
 +import java.awt.geom.Point2D;
-+import java.util.LinkedList;
-+import java.util.List;
 +
 +/**
   * It represent a component that switches class of jobs coming into it. 
   * @author John
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Represents a pure Delay service center
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
   *
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 ===================================================================
@@ -1661,91 +1631,11 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  		return GraphConstants.STYLE_ORTHOGONAL;
  	}
  
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JoinCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/JoinCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JoinCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java	(working copy)
-@@ -21,6 +21,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * <p>Title: Logger Cell</p>
-  * <p>Description: </p>
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Place Cell, represents the place of SPN models.
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java	(working copy)
-@@ -21,6 +21,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * <p>Title: Router Cell</p>
-  * <p>Description: Routes jobs without servicing capability. This special class was introduced
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * @author Vitor S. Lopes
-  * Date: 25-jul-2016
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * @author Vitor S. Lopes
-  * Date: 25-jul-2016
-@@ -62,6 +65,7 @@
+@@ -62,6 +62,7 @@
  		ports[0] = new InputPort(this);
  		ports[1] = new OutputPort(this);
  		return ports;
@@ -1753,76 +1643,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java
  	}
  
  	/**
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ServerCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/ServerCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ServerCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Queue Cell, represents the default service center of the model.
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Represents a Sink service center, it used to destroy jobs in open systems
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Generates new jobs in open systems, it generates jobs of 1 JobClass only
-  *
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java	(working copy)
-@@ -22,6 +22,9 @@
- 
- import org.jgraph.graph.Port;
- 
-+import java.util.LinkedList;
-+import java.util.List;
-+
- /**
-  * Transition Cell, represents the transition of SPN models.
-  *
 Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java	(revision 978)
