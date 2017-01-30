@@ -237,13 +237,11 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(working copy)
-@@ -20,7 +20,9 @@
+@@ -20,7 +20,7 @@
  
  import org.jgraph.graph.Port;
  
 - /**
-+import java.awt.geom.Point2D;
-+
 +/**
   * It represent a component that switches class of jobs coming into it. 
   * @author John
