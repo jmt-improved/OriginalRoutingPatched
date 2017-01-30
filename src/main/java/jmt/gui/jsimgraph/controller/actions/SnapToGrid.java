@@ -6,7 +6,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 /**
- * Created by raffaele on 1/26/17.
+ * Class encapsulating the toolbar button for snap to grid action
+ * @author Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
+ * @date 30/Jan/2017
  */
 public class SnapToGrid extends AbstractJmodelAction {
 

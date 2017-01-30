@@ -68,23 +68,27 @@ Index: src/main/java/jmt/gui/common/definitions/CommonModel.java
 ===================================================================
 --- src/main/java/jmt/gui/common/definitions/CommonModel.java	(revision 978)
 +++ src/main/java/jmt/gui/common/definitions/CommonModel.java	(working copy)
-@@ -3542,9 +3542,12 @@
+@@ -3542,9 +3542,15 @@
  		/** Reference to owner blocking station or null */
  		public Object blockingRegion;
  
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		public boolean pinned;
 +
  		public StationData(String name, String type) {
  			this.name = name;
  			this.type = type;
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// by default this station is free to move when autoarrange/snap to grid is utilized
 +			this.pinned = false;
  		}
  	}
  
-@@ -4053,6 +4056,30 @@
+@@ -4053,6 +4059,32 @@
  		}
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +	@Override
 +	public boolean isPinned(Object stationKey) {
 +		StationData sd;
@@ -97,6 +101,7 @@ Index: src/main/java/jmt/gui/common/definitions/CommonModel.java
 +		return sd.pinned;
 +	}
 +
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +	@Override
 +	public void setIsPinned(Object stationKey, boolean value) {
 +		StationData sd;
@@ -116,13 +121,21 @@ Index: src/main/java/jmt/gui/common/definitions/StationDefinition.java
 ===================================================================
 --- src/main/java/jmt/gui/common/definitions/StationDefinition.java	(revision 978)
 +++ src/main/java/jmt/gui/common/definitions/StationDefinition.java	(working copy)
-@@ -637,4 +637,7 @@
+@@ -637,4 +637,15 @@
  	 */
  	public void setFiringOutcome(Object stationKey, int modeIndex, Object stationOutKey, Object classKey, Integer value);
  
-+	boolean isPinned(Object key);
++	/**
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Returns pin status for <code>stationKey</code>
++	 */
++	boolean isPinned(Object stationKey);
 +
-+	void setIsPinned(Object key, boolean value);
++	/**
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Sets new pin status for <code>stationKey</code>
++	 */
++	void setIsPinned(Object statioKey, boolean value);
  }
 Index: src/main/java/jmt/gui/common/xml/GuiXMLConstants.java
 ===================================================================
@@ -140,18 +153,22 @@ Index: src/main/java/jmt/gui/common/xml/GuiXMLReader.java
 ===================================================================
 --- src/main/java/jmt/gui/common/xml/GuiXMLReader.java	(revision 978)
 +++ src/main/java/jmt/gui/common/xml/GuiXMLReader.java	(working copy)
-@@ -135,6 +135,7 @@
+@@ -135,6 +135,8 @@
  		Element station, position;
  		String name;
  		double x, y;
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		boolean pinned = false;
  		boolean rotate = false;
  		// For each stored Station
  		for (int i = 0; i < stations.getLength(); i++) {
-@@ -146,11 +147,15 @@
+@@ -146,11 +148,18 @@
  			if (position.hasAttribute(XML_A_POSITION_ROTATE)) {
  				rotate = Boolean.TRUE.toString().equalsIgnoreCase(position.getAttribute(XML_A_POSITION_ROTATE));
  			}
++			/* Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			 * Sets pin status based on XML attribute's value, if not present, by default it is set to false.
++			 */
 +			if (position.hasAttribute(XML_A_PIN)) {
 +				pinned = Boolean.parseBoolean(position.getAttribute(XML_A_PIN));
 +			}
@@ -168,10 +185,11 @@ Index: src/main/java/jmt/gui/common/xml/GuiXMLWriter.java
 ===================================================================
 --- src/main/java/jmt/gui/common/xml/GuiXMLWriter.java	(revision 978)
 +++ src/main/java/jmt/gui/common/xml/GuiXMLWriter.java	(working copy)
-@@ -181,6 +181,7 @@
+@@ -181,6 +181,8 @@
  			position.setAttribute(XML_A_POSITION_X, String.valueOf(model.getStationPosition(stationKey).getX()));
  			position.setAttribute(XML_A_POSITION_Y, String.valueOf(model.getStationPosition(stationKey).getY()));
  			position.setAttribute(XML_A_POSITION_ROTATE, String.valueOf(model.getStationPosition(stationKey).isRotate()));
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +			position.setAttribute(XML_A_PIN, String.valueOf(model.isPinned(stations.get(i))));
  			station.appendChild(position);
  			guiNode.appendChild(station);
@@ -202,15 +220,19 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java	(working copy)
-@@ -53,6 +53,8 @@
- 		return sd.getStationName(key);
+@@ -54,6 +54,12 @@
  	}
  
+ 	/**
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Returns pin status based on the value stored in the JModelStationDefinition instance attached to this CellComponent.
++	 */
 +	public boolean isPinned() { return sd.isPinned(key); }
 +
- 	/**
++	/**
  	 * Returns key referencing this station
  	 * @return this station's key
+ 	 */
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(revision 978)
@@ -228,24 +250,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java
   * It represent a component that switches class of jobs coming into it. 
   * @author John
   *
-@@ -54,10 +58,13 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
--		ports[0] = new InputPort(this);
--		ports[1] = new OutputPort(this);
-+	public List<Port> createPorts() {
-+		//Port[] ports = new Port[2];
-+		//ports[0] = new InputPort(this);
-+		//ports[1] = new OutputPort(this);
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java	(revision 978)
@@ -260,23 +264,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/DelayCell.java
  /**
   * Represents a pure Delay service center
   *
-@@ -59,10 +62,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java	(revision 978)
@@ -291,23 +278,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ForkCell.java
  /**
   * Generates new jobs in open systems, it generates jobs of 1 JobClass only
   *
-@@ -59,10 +62,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java	(revision 978)
@@ -342,7 +312,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
  
  import javax.swing.Icon;
  import javax.swing.ImageIcon;
-@@ -35,251 +34,270 @@
+@@ -35,251 +34,271 @@
  
  import jmt.gui.common.JMTImageLoader;
  
@@ -421,14 +391,22 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -	public int sons = 1;
 -	public int type;
 -	private boolean leftInputCell = true;
-+    //private Port[] ports;
++    private Port[] ports;
  
 -	/**
 -	 * Tells if this component can be placed on JGraph or has been disabled. This is
 -	 * useful to load old models with disabled components (like terminals)
 -	 */
 -	public static final boolean canBePlaced = true;
-+    private List<Port> ports;
++    // Giuseppe De Cicco & Fabio Granara
++    public boolean seen = false;
++    public int in = 1;
++    public int out = 1;
++    public boolean okin = false;
++    public boolean okout = false;
++    public int sons = 1;
++    public int type;
++    private boolean leftInputCell = true;
  
 -	/**
 -	 * Creates a graph cell and initializes it with the specified user object.
@@ -447,20 +425,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -		GraphConstants.setSizeable(attributes, false);
 -		GraphConstants.setSize(attributes, imageDimension);
 -	}
-+    // Giuseppe De Cicco & Fabio Granara
-+    public boolean seen = false;
-+    public int in = 1;
-+    public int out = 1;
-+    public boolean okin = false;
-+    public boolean okout = false;
-+    public int sons = 1;
-+    public int type;
-+    private boolean leftInputCell = true;
- 
--	// Giuseppe De Cicco & Fabio Granara
--	public void AddIn() {
--		in += 1;
--	}
 +    /**
 +     * Tells if this component can be placed on JGraph or has been disabled. This is
 +     * useful to load old models with disabled components (like terminals)
@@ -468,8 +432,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +    public static final boolean canBePlaced = true;
  
 -	// Giuseppe De Cicco & Fabio Granara
--	public void SubIn() {
--		in -= 1;
+-	public void AddIn() {
+-		in += 1;
 -	}
 +    /**
 +     * Creates a graph cell and initializes it with the specified user object.
@@ -483,6 +447,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +    public JmtCell(String icon, Object userObject) {
 +        super(userObject);
 +        ImageIcon ico = JMTImageLoader.loadImage(icon);
++        // Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++        // Display a lock if this cell is pinned.
 +        if (isPinned()) {
 +            ImageIcon lockIcon = JMTImageLoader.loadImage("lock", new Dimension(16, 16));
 +            GraphConstants.setIcon(attributes, new MergedIcon(JMTImageLoader.loadImage(icon), lockIcon));
@@ -495,8 +461,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +    }
  
 -	// Giuseppe De Cicco & Fabio Granara
--	public void AddOut() {
--		out += 1;
+-	public void SubIn() {
+-		in -= 1;
 -	}
 +    // Giuseppe De Cicco & Fabio Granara
 +    public void AddIn() {
@@ -504,12 +470,21 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +    }
  
 -	// Giuseppe De Cicco & Fabio Granara
--	public void SubOut() {
--		out -= 1;
+-	public void AddOut() {
+-		out += 1;
 -	}
 +    // Giuseppe De Cicco & Fabio Granara
 +    public void SubIn() {
 +        in -= 1;
++    }
+ 
+-	// Giuseppe De Cicco & Fabio Granara
+-	public void SubOut() {
+-		out -= 1;
+-	}
++    // Giuseppe De Cicco & Fabio Granara
++    public void AddOut() {
++        out += 1;
 +    }
  
 -	/**
@@ -535,8 +510,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -		return cellDimension;
 -	}
 +    // Giuseppe De Cicco & Fabio Granara
-+    public void AddOut() {
-+        out += 1;
++    public void SubOut() {
++        out -= 1;
 +    }
  
 -	/**
@@ -545,9 +520,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -	 * @return array of ports
 -	 */
 -	public abstract Port[] createPorts();
-+    // Giuseppe De Cicco & Fabio Granara
-+    public void SubOut() {
-+        out -= 1;
++    public int numInEdges() {
++        return in;
 +    }
  
 -	/**
@@ -560,8 +534,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -	public Hashtable<Object, Map> setAttributes(Point2D pt, JGraph graph) {
 -		//contains attribute of the cell & ports
 -		Hashtable<Object, Map> nest = new Hashtable<Object, Map>();
-+    public int numInEdges() {
-+        return in;
++    public int numOutEdges() {
++        return out;
 +    }
  
 -		Dimension cellDimension = getSize(graph);
@@ -571,8 +545,9 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -		GraphConstants.setEditable(attr, false);
 -		GraphConstants.setBackground(attr, graph.getBackground());
 -		nest.put(this, attr);
-+    public int numOutEdges() {
-+        return out;
++    // Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++    public boolean isPinned() {
++        return ((CellComponent) getUserObject()).isPinned();
 +    }
  
 -		//create ports
@@ -583,21 +558,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -			add((DefaultPort) port);
 -		}
 -		return nest;
--	}
-+    public boolean isPinned() {
-+        return ((CellComponent) getUserObject()).isPinned();
-+    }
- 
--	public void updatePortPositions(Map<Object, Map> nest, Icon icon, Dimension cellDimension) {
--		for (Port port : ports) {
--			Map attr = new Hashtable();
--			if (port instanceof InputPort && isLeftInputCell() || port instanceof OutputPort && !isLeftInputCell()) {
--				GraphConstants.setOffset(attr, getInPortOffset(icon, cellDimension));
--			} else {
--				GraphConstants.setOffset(attr, getOutPortoffset(icon, cellDimension));
--			}
--			nest.put(port, attr);
--		}
 -	}
 +    /**
 +     * Returns Cell's real size (this method considers Icon and name size)
@@ -622,24 +582,28 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +        return cellDimension;
 +    }
  
--	protected Point getInPortOffset(Icon icon, Dimension cellDimension) {
--		int iconHeight = icon.getIconHeight();
--		int iconWidth = icon.getIconWidth();
--		int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width;
--		int yOff = iconHeight / 2 * 1000 / cellDimension.height;
--		return new Point(xOff, yOff);
+-	public void updatePortPositions(Map<Object, Map> nest, Icon icon, Dimension cellDimension) {
+-		for (Port port : ports) {
+-			Map attr = new Hashtable();
+-			if (port instanceof InputPort && isLeftInputCell() || port instanceof OutputPort && !isLeftInputCell()) {
+-				GraphConstants.setOffset(attr, getInPortOffset(icon, cellDimension));
+-			} else {
+-				GraphConstants.setOffset(attr, getOutPortoffset(icon, cellDimension));
+-			}
+-			nest.put(port, attr);
+-		}
 -	}
 +    /**
 +     * Creates the ports for this vertex
 +     *
 +     * @return array of ports
 +     */
-+    public abstract List<Port> createPorts();
++    public abstract Port[] createPorts();
  
--	protected Point getOutPortoffset(Icon icon, Dimension cellDimension) {
+-	protected Point getInPortOffset(Icon icon, Dimension cellDimension) {
 -		int iconHeight = icon.getIconHeight();
 -		int iconWidth = icon.getIconWidth();
--		int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width + iconWidth * 1000 / cellDimension.width;
+-		int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width;
 -		int yOff = iconHeight / 2 * 1000 / cellDimension.height;
 -		return new Point(xOff, yOff);
 -	}
@@ -654,13 +618,12 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +        //contains attribute of the cell & ports
 +        Hashtable<Object, Map> nest = new Hashtable<Object, Map>();
  
--	/**
--	 * Tells if the InputPort of this cell is on the left side
--	 * @return true if the InputPort of this cell is on the left side
--	 */
--	// Giuseppe De Cicco & Fabio Granara
--	public boolean isLeftInputCell() {
--		return leftInputCell;
+-	protected Point getOutPortoffset(Icon icon, Dimension cellDimension) {
+-		int iconHeight = icon.getIconHeight();
+-		int iconWidth = icon.getIconWidth();
+-		int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width + iconWidth * 1000 / cellDimension.width;
+-		int yOff = iconHeight / 2 * 1000 / cellDimension.height;
+-		return new Point(xOff, yOff);
 -	}
 +        Dimension cellDimension = getSize(graph);
 +        //contains attrib of cell
@@ -670,9 +633,13 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +        GraphConstants.setBackground(attr, graph.getBackground());
 +        nest.put(this, attr);
  
+-	/**
+-	 * Tells if the InputPort of this cell is on the left side
+-	 * @return true if the InputPort of this cell is on the left side
+-	 */
 -	// Giuseppe De Cicco & Fabio Granara
--	public void setLeftInputCell(boolean state) {
--		leftInputCell = state;
+-	public boolean isLeftInputCell() {
+-		return leftInputCell;
 -	}
 +        //create ports
 +        ports = createPorts();
@@ -682,13 +649,30 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +            add((DefaultPort) port);
 +        }
  
+-	// Giuseppe De Cicco & Fabio Granara
+-	public void setLeftInputCell(boolean state) {
+-		leftInputCell = state;
+-	}
++        return nest;
++    }
+ 
 -	/**
 -	 * Resets stored parent information for this cell
 -	 */
 -	public void resetParent() {
 -		parentRef = getParent();
 -	}
-+        return nest;
++    public void updatePortPositions(Map<Object, Map> nest, Icon icon, Dimension cellDimension) {
++        for (Port port : ports) {
++            Map attr = new Hashtable();
++            if (port instanceof InputPort && isLeftInputCell() || port instanceof OutputPort && !isLeftInputCell()) {
++                GraphConstants.setOffset(attr, getInPortOffset(icon, cellDimension));
++            } else {
++                Point offset = getOutPortoffset(icon, cellDimension);
++                GraphConstants.setOffset(attr, offset);
++            }
++            nest.put(port, attr);
++        }
 +    }
  
 -	/**
@@ -706,17 +690,12 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -			return !parentRef.equals(getParent());
 -		}
 -	}
-+    public void updatePortPositions(Map<Object, Map> nest, Icon icon, Dimension cellDimension) {
-+        for (Port port : ports) {
-+            Map attr = new Hashtable();
-+            if (port instanceof InputPort && isLeftInputCell() || port instanceof OutputPort && !isLeftInputCell()) {
-+                GraphConstants.setOffset(attr, getInPortOffset(icon, cellDimension));
-+            } else {
-+                Point offset = getOutPortoffset(icon, cellDimension);
-+                GraphConstants.setOffset(attr, offset);
-+            }
-+            nest.put(port, attr);
-+        }
++    protected Point getInPortOffset(Icon icon, Dimension cellDimension) {
++        int iconHeight = icon.getIconHeight();
++        int iconWidth = icon.getIconWidth();
++        int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width;
++        int yOff = iconHeight / 2 * 1000 / cellDimension.height;
++        return new Point(xOff, yOff);
 +    }
  
 -	/**
@@ -728,10 +707,10 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -	public boolean generateOrDestroyJobs() {
 -		return false;
 -	}
-+    protected Point getInPortOffset(Icon icon, Dimension cellDimension) {
++    protected Point getOutPortoffset(Icon icon, Dimension cellDimension) {
 +        int iconHeight = icon.getIconHeight();
 +        int iconWidth = icon.getIconWidth();
-+        int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width;
++        int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width + iconWidth * 1000 / cellDimension.width;
 +        int yOff = iconHeight / 2 * 1000 / cellDimension.height;
 +        return new Point(xOff, yOff);
 +    }
@@ -746,20 +725,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 -	public TreeNode getPrevParent() {
 -		return parentRef;
 -	}
-+    protected Point getOutPortoffset(Icon icon, Dimension cellDimension) {
-+        int iconHeight = icon.getIconHeight();
-+        int iconWidth = icon.getIconWidth();
-+        int xOff = (cellDimension.width - iconWidth) / 2 * 1000 / cellDimension.width + iconWidth * 1000 / cellDimension.width;
-+        int yOff = iconHeight / 2 * 1000 / cellDimension.height;
-+        return new Point(xOff, yOff);
-+    }
- 
--	/**
--	 * Returns the name of the icon of this cell
--	 *
--	 * @return the name of the icon of this cell
--	 */
--	public abstract String getIcon();
 +    /**
 +     * Tells if the InputPort of this cell is on the left side
 +     *
@@ -770,11 +735,17 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +        return leftInputCell;
 +    }
  
+-	/**
+-	 * Returns the name of the icon of this cell
+-	 *
+-	 * @return the name of the icon of this cell
+-	 */
+-	public abstract String getIcon();
 +    // Giuseppe De Cicco & Fabio Granara
 +    public void setLeftInputCell(boolean state) {
 +        leftInputCell = state;
 +    }
-+
+ 
 +    /**
 +     * Resets stored parent information for this cell
 +     */
@@ -830,12 +801,15 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java	(working copy)
-@@ -47,6 +47,15 @@
+@@ -47,6 +47,18 @@
   * 
   */
  public class JmtEdge extends DefaultEdge {
 +
-+
++	/*
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Identifies the type of edge, useful for routing purposes.
++	 */
 +	public enum Type {
 +		INVALID,
 +		LOOP_BACK_UPPER,
@@ -846,35 +820,54 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
  	/**
  	 * 
  	 */
-@@ -68,7 +77,10 @@
- 	protected Point2D intersectionPoint = null;
+@@ -69,6 +81,14 @@
  	private Mediator mediator;
  	public ArrayList<Point2D> intersectionEdgePoint = new ArrayList<Point2D>();
-+	private List<Point2D> routedPoints = new ArrayList<>();
  
++	/*
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Stores the last routing points computed by the algorithm in class JmtRouting
++	 */
++	private List<Point2D> routedPoints = new ArrayList<>();
++
 +	private Type type = Type.INVALID;
 +
  	//    public ArrayList intersectionEdgePoint2=new ArrayList();
  
  	public JmtEdge() {
-@@ -767,4 +779,23 @@
+@@ -767,4 +787,38 @@
  		return (int) (max - boundsSource.getMaxX());
  	}
  
++	/*
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Sets new routing points for this edge
++	 */
 +	public void setRoutedPoints(List<Point2D> points) {
 +		routedPoints.clear();
 +		routedPoints.addAll(points);
 +	}
 +
-+
++	/*
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Gets last computed routing points for this edge
++	 */
 +	public List<Point2D> getRoutedPoints() {
 +		return routedPoints;
 +	}
 +
++	/*
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Sets new edge type for this JmtEdge
++	 */
 +	public void setType(Type newType) {
 +		type = newType;
 +	}
 +
++	/*
++	 * Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	 * Gets the edge type for this JmtEdge
++	 */
 +	public Type getType() {
 +		return type;
 +	}
@@ -900,10 +893,16 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
  
  /** Jmt version of JGraph.
  
-@@ -167,6 +161,24 @@
+@@ -167,6 +161,30 @@
  		return null;
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	/** Gets a free inport port for the cell under Point(x,y), if this doesn't exists, a new one it is created
++	 * @param x  horizontal coordinate
++	 * @param y  vertical coordinate
++	 * @return the inport port if available else null
++	 */
 +	public InputPort getFreeInPortAt(int x, int y) {
 +		JmtCell cell = getVertexAt(x, y);
 +		for (int i = 0; i < getModel().getChildCount(cell); i++) {
@@ -925,10 +924,17 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
  	/** Gets the outport port for the cell under Point(x,y)
  	 *
  	 * @param x  horizontal coordinate
-@@ -242,6 +254,24 @@
+@@ -242,6 +260,31 @@
  		Defaults.save();
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	/** Gets a free output port for the cell under Point(x,y), if this doesn't exists, a new one it is created
++	 *
++	 * @param x  horizontal coordinate
++	 * @param y  vertical coordinate
++	 * @return the outport port if available else null
++	 */
 +	public OutputPort getFreeOutPortAt(int x, int y) {
 +		JmtCell cell = getVertexAt(x, y);
 +		for (int i = 0; i < getModel().getChildCount(cell); i++) {
@@ -984,12 +990,21 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  /**
  
   * @author Federico Granata
-@@ -41,6 +45,40 @@
+@@ -38,9 +42,58 @@
+ 
+  * Heavily modified by Bertoli Marco to support JGraph 5.8 - 21/mar/2006
+  * Heavily modified by De Cicco Giuseppe & Fabio Granara to new JmtRouting - 23/sett/2006
++ * Heavily modified by Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio for supporting multiple incoming/outgoing edges for the same component - 30/Jan/2017
   */
  public class JmtRouting implements Edge.Routing {
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +	Mediator mediator;
 +
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	/*
++	 * Class that represents an interval between two numbers.
++	 */
 +	class Interval {
 +		private double lower;
 +		private double upper;
@@ -999,15 +1014,24 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +			upper = b1 <= b2 ? b2 : b1;
 +		}
 +
++		/**
++		 * Checks if a value is contained in this interval
++		 * @param p The value to test
++		 * @return True if the value is contained
++		 */
 +		public boolean contains(double p) {
 +			return p >= lower && p <= upper;
 +		}
 +	}
 +
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	// User-defined predicate to apply on a generic element
 +	interface Predicate<T> {
 +		boolean evaluate(T v);
 +	}
 +
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	// Partitions a list into two sublists, one containing the elements that satisfy a given predicate and another list with the rest of the elements.
 +	static <T> Map<Boolean, List<T>> partition(Predicate<T> predicate, List<T> collection) {
 +		Map<Boolean, List<T>> result = new HashMap<>();
 +		try {
@@ -1025,7 +1049,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  	private static final long serialVersionUID = 1L;
  	private int offset = 15; //offset per il source
  	private int offsetTo2 = -15; //offset per il target
-@@ -65,20 +103,20 @@
+@@ -65,20 +118,20 @@
  
  			Point2D[] routed;
  			int offset = this.offset;
@@ -1051,7 +1075,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  			if (!source.isLeftInputCell()) {
  				offset = -offset;
  				//ringOffset=-ringOffset;
-@@ -102,6 +140,7 @@
+@@ -102,6 +155,7 @@
  
  			} else {
  				//the source is on the left of the target
@@ -1059,7 +1083,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  				if ((int) from.getY() == (int) to.getY()
  						&& ((boundFrom < boundTo && offset > 0 && offsetTo2 < 0) || (boundFrom > boundTo && offset < 0 && offsetTo2 > 0))) {
  					list.add(from);
-@@ -110,10 +149,10 @@
+@@ -110,10 +164,10 @@
  				}
  				if ((((boundTo - boundFrom) > offset * (1.1)) && (offset > 0 && offsetTo2 < 0))
  						|| (((boundFrom - boundTo) > (-offset * (1.1))) && (offset < 0 && offsetTo2 > 0))) {
@@ -1071,10 +1095,12 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  				}
  				//____________inizio
  				else if ((offset < 0 && offsetTo2 < 0)) {
-@@ -188,14 +227,73 @@
+@@ -188,14 +242,78 @@
  				} else {
  
  					if ((from.getY() + sourceBounds.getHeight() - 4) < (to.getY() - (targetBounds.getHeight() / 2))) {
++						// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++						// this code is similar to the else case, with suitable changes.
 +						// edge going from right to left circumventing the model on the upper side
 +						edge.setType(JmtEdge.Type.LOOP_BACK_UPPER);
  						routed = new Point2D[4];
@@ -1085,6 +1111,9 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 -						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
 +						//double maxY = sourceBounds.getMaxY() + 20;
 +
++						// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++						// Compute the y coordinate of the loop back edge taking into account other edges of the same type,
++						// in order to avoid overlapping lines.
 +						List<OutputPort> outPorts = new ArrayList<>();
 +						Enumeration ports = source.children();
 +
@@ -1149,12 +1178,15 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed = new Point2D[4];
  						routed[0] = new Point2D.Double(boundFrom + offset, from.getY());
  						//System.out.println("Differenza "+ (sourceBounds.getMaxY()-(routed[0].getY() + sourceBounds.getBounds().getHeight()+2)));
-@@ -202,7 +300,33 @@
+@@ -202,7 +320,36 @@
  						routed[3] = new Point2D.Double(boundTo + offsetTo2, to.getY());
  						//double maxY = Math.max(routed[0].getY() + sourceBounds.getBounds().getHeight()+2,
  						//		routed[3].getY() + targetBounds.getBounds().getHeight()+8);
 -						double maxY = Math.max(sourceBounds.getMaxY() + 20, targetBounds.getMaxY() + 26);
 +
++						// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++						// Compute the y coordinate of the loop back edge taking into account other edges of the same type,
++						// in order to avoid overlapping lines.
 +						List<OutputPort> outPorts = new ArrayList<>();
 +						Enumeration ports = source.children();
 +
@@ -1184,11 +1216,13 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
  						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
  
-@@ -238,18 +362,416 @@
+@@ -238,18 +385,438 @@
  					}
  				}
  			}
 +
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Adjust outport ports and this edge offsets w.r.t. component's border based on specific criteria
 +			double startY = from.getY();
 +			{
 +				Icon i = JMTImageLoader.loadImage(source.getIcon());
@@ -1206,10 +1240,12 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					}
 +				}
 +
++				// Calculate space between ports/edges based on #number of outgoing edges + 1
 +				double division = sourceSize.getHeight() / (source.numOutEdges() + 1.0);
 +				double divisionOffset = source.getOutPortoffset(i, d).getY() * 2 / (source.numOutEdges() + 1.0);
 +
-+
++				// The whole list is partitioned in three sub lists one for each type of edge
++				// For each sublist a different order criteria is applied.
 +				Map<Boolean, List<OutputPort>> parts = partition(new Predicate<OutputPort>() {
 +					@Override
 +					public boolean evaluate(OutputPort v) {
@@ -1223,6 +1259,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +
 +				List<OutputPort> portsLoopBackUpper = parts.get(true);
 +
++				// The more the port has lower y offset the more the destination component is near the source one.
 +				Collections.sort(portsLoopBackUpper, new Comparator<OutputPort>() {
 +					@Override
 +					public int compare(OutputPort o1, OutputPort o2) {
@@ -1249,6 +1286,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +
 +				List<OutputPort> portsLeftToRight = parts.get(true);
 +
++				// The more the port has lower y offset, the more the destination component has lower y coordinate.
 +				Collections.sort(portsLeftToRight, new Comparator<OutputPort>() {
 +					@Override
 +					public int compare(OutputPort o1, OutputPort o2) {
@@ -1275,6 +1313,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +
 +				List<OutputPort> portsLoopBackLower = parts.get(true);
 +
++				// The more the porr has greater y offset the more the destination component is near the source one.
 +				Collections.sort(portsLoopBackLower, new Comparator<OutputPort>() {
 +					@Override
 +					public int compare(OutputPort o1, OutputPort o2) {
@@ -1288,6 +1327,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					}
 +				});
 +
++				// Rebuild the outport list in this exact order, so to minimize intersections between outgoing edges.
 +				outPorts.clear();
 +				outPorts.addAll(portsLoopBackUpper);
 +				outPorts.addAll(portsLeftToRight);
@@ -1298,11 +1338,14 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					JmtEdge outEdge = (JmtEdge) (outPort.getEdges().iterator().next());
 +					JmtCell targetO = (JmtCell) ((InputPort) outEdge.getTarget()).getParent();
 +					if (targetO == target) {
++						// We have found the index in the outport array for this edge, adjusts its offset.
 +						startY = sourceBounds.getMinY() + (division * (index + 1));
 +						routed[0].setLocation(routed[0].getX(), startY);
 +					}
 +
++					// If the component is rotated, the x offset must be changed accordingly.
 +					Point2D portOffset = source.isLeftInputCell() ? source.getOutPortoffset(i, d) : source.getInPortOffset(i, d);
++					// Adjust offset of each port, if the attribute doesn't exist, create a new one.
 +					if (outPort.getAttributes().get("offset") != null) {
 +						((Point2D.Double) outPort.getAttributes().get("offset")).setLocation(portOffset.getX(), divisionOffset * (index + 1));
 +					} else {
@@ -1311,31 +1354,38 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +				}
 +
 +				if (outPorts.size() > 1) {
++					// check if other edges that start from the same source component overlap this edge along their way
 +					boolean needRecompute = true;
 +					while (needRecompute) {
 +						needRecompute = false;
 +						for (int index = 0; index < outPorts.size(); index++) {
 +							OutputPort outPort = outPorts.get(index);
++							// handle corner cases
 +							if (outPort.getEdges().size() == 0) {
 +								continue;
 +							}
++
++							// we have found the same edge that we are routing
 +							JmtEdge otherEdge = (JmtEdge) outPort.getEdges().iterator().next();
 +							if (((DefaultPort) otherEdge.getSource()).getParent() == source && ((DefaultPort)otherEdge.getTarget()).getParent() == target) {
 +								continue;
 +							}
 +
++							// Check this other edge with the one that we are routing by iterating over their (routed) points
 +							List<Point2D> otherPoints = otherEdge.getRoutedPoints();
 +							for (int ir = 0; ir < (routed.length - 1); ir++) {
 +								int dir;
 +								if (routed[ir].getY() == routed[ir + 1].getY()) {
-+									dir = 1;
++									dir = 1; // Horizontal direction
 +								} else {
-+									dir = 2;
++									dir = 2; // Vertical direction
 +								}
 +								for (int io = 0; io < (otherPoints.size() - 1); io++) {
 +									if (dir == 1 && (otherPoints.get(io).getY() == otherPoints.get(io + 1).getY() && (otherPoints.get(io).getY() == routed[ir].getY()))) {
++										// This segments have same directions, let's check if one (or both) point is contained over the routed segment
 +										Interval interval = new Interval(routed[ir].getX(), routed[ir + 1].getX());
 +										if (interval.contains(otherPoints.get(io).getX()) || interval.contains(otherPoints.get(io + 1).getX())) {
++											// There's overlap, change x coordinate by some amount, we have to discriminate between loop back edges and left-to-right edges.
 +											int sign;
 +											if (ir > 1 && target.isLeftInputCell()) {
 +												sign = -1;
@@ -1348,7 +1398,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +											}
 +
 +											routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() + sign * offset);
-+											routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() + sign * offset);
++											routed[ir + 1].setLocation(routed[ir + 1].getX(), routed[ir + 1].getY() + sign * offset);
++											// We have modified some coordinates, we have to recheck that all the edges don't overlap again
 +											needRecompute = true;
 +										}
 +									} else if (dir == 2 && (otherPoints.get(io).getX() == otherPoints.get(io + 1).getX() && (otherPoints.get(io).getX() == routed[ir].getX()))) {
@@ -1377,6 +1428,9 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +				}
 + 			}
 +
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Adjust input ports and this edge offsets w.r.t. component's border based on specific criteria
++			// This is the dual case of the previous one, except for the fact that here we are handling incoming edges and input ports.
 +			double finalY = to.getY();
 +			{
 +				Icon i = JMTImageLoader.loadImage(target.getIcon());
@@ -1535,7 +1589,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +												sign = -1;
 +											}
 +											routed[ir].setLocation(routed[ir].getX(), routed[ir].getY() + sign * offset);
-+											routed[ir + 1].setLocation(routed[ir + 1].getX() + offset, routed[ir + 1].getY() + sign *offset);
++											routed[ir + 1].setLocation(routed[ir + 1].getX(), routed[ir + 1].getY() + sign *offset);
 +											needRecompute = true;
 +										}
 +									} else if (dir == 2 && (otherPoints.get(io).getX() == otherPoints.get(io + 1).getX() && (otherPoints.get(io).getX() == routed[ir].getX()))) {
@@ -1621,23 +1675,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JoinCell.java
  /**
   * Generates new jobs in open systems, it generates jobs of 1 JobClass only
   *
-@@ -59,10 +62,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java	(revision 978)
@@ -1652,23 +1689,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/LoggerCell.java
  /**
   * <p>Title: Logger Cell</p>
   * <p>Description: </p>
-@@ -51,10 +54,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java	(revision 978)
@@ -1683,23 +1703,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/PlaceCell.java
  /**
   * Place Cell, represents the place of SPN models.
   *
-@@ -59,10 +62,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java	(revision 978)
@@ -1714,23 +1717,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/RoutingStationCell.java
  /**
   * <p>Title: Router Cell</p>
   * <p>Description: Routes jobs without servicing capability. This special class was introduced
-@@ -60,10 +63,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java	(revision 978)
@@ -1745,23 +1731,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ScalerCell.java
  /**
   * @author Vitor S. Lopes
   * Date: 25-jul-2016
-@@ -57,10 +60,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java	(revision 978)
@@ -1776,20 +1745,9 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SemaphoreCell.java
  /**
   * @author Vitor S. Lopes
   * Date: 25-jul-2016
-@@ -57,11 +60,16 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
+@@ -62,6 +65,7 @@
  		ports[0] = new InputPort(this);
  		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
  		return ports;
 +
  	}
@@ -1809,23 +1767,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ServerCell.java
  /**
   * Queue Cell, represents the default service center of the model.
   *
-@@ -59,10 +62,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java	(revision 978)
@@ -1840,21 +1781,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SinkCell.java
  /**
   * Represents a Sink service center, it used to destroy jobs in open systems
   *
-@@ -59,9 +62,12 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[1];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[1];
- 		ports[0] = new InputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java	(revision 978)
@@ -1869,21 +1795,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/SourceCell.java
  /**
   * Generates new jobs in open systems, it generates jobs of 1 JobClass only
   *
-@@ -59,9 +62,12 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[1];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[1];
- 		ports[0] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java	(revision 978)
@@ -1898,23 +1809,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TerminalCell.java
  /**
   * Generates new jobs in open systems, it generates jobs of 1 JobClass only
   *
-@@ -58,10 +61,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+	/*	Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java	(revision 978)
@@ -1929,49 +1823,43 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/TransitionCell.java
  /**
   * Transition Cell, represents the transition of SPN models.
   *
-@@ -59,10 +62,14 @@
- 	 * @return array of ports
- 	 */
- 	@Override
--	public Port[] createPorts() {
--		Port[] ports = new Port[2];
-+	public List<Port> createPorts() {
-+		/*Port[] ports = new Port[2];
- 		ports[0] = new InputPort(this);
- 		ports[1] = new OutputPort(this);
-+		return ports;*/
-+		List<Port> ports = new LinkedList<>();
-+		ports.add(new InputPort(this));
-+		ports.add(new OutputPort(this));
- 		return ports;
- 	}
- 
 Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java	(working copy)
-@@ -64,7 +64,7 @@
+@@ -64,7 +64,9 @@
  	public void handlePress(MouseEvent e) {
  		if (!e.isConsumed()) {
  			start = mediator.snap(e.getPoint());
 -			firstPort = port = getOutPortViewAt(e.getX(), e.getY());
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Request a (possibly new) free output port
 +			firstPort = port = getFreeOutPortViewAt(e.getX(), e.getY());
  			if (firstPort != null) {
  				start = mediator.toScreen(firstPort.getLocation(null));
  			}
-@@ -113,7 +113,7 @@
+@@ -113,7 +115,9 @@
  	@Override
  	public void handleRelease(MouseEvent e) {
  		if (e != null && !e.isConsumed()) {
 -			PortView end = getInPortViewAt(e.getX(), e.getY());
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Request a (possibly new) free input port
 +			PortView end = getFreeInPortViewAt(e.getX(), e.getY());
  			if (end != null) {
  				mediator.connect(start, current, end, firstPort);
  				if ((firstPort != null) && ((VertexView) (firstPort.getParentView()) != null)) {
-@@ -133,6 +133,10 @@
+@@ -133,6 +137,17 @@
  		current = null;
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	/** gets the first free portView of the input port of the cell at position
++	 *
++	 * @param x
++	 * @param y
++	 * @return portView of the input port
++	 */
 +	private PortView getFreeInPortViewAt(int x, int y) {
 +		return mediator.getFreeInPortViewAt(x, y);
 +	}
@@ -1979,10 +1867,17 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
  	/** gets the first portView of the input port of the cell at position
  	 *
  	 * @param x
-@@ -153,6 +157,10 @@
+@@ -153,6 +168,17 @@
  		return mediator.getOutPortViewAt(x, y);
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	/** gets the first free portView of the output port of the cell at position
++	 *
++	 * @param x
++	 * @param y
++	 * @return portView of the output port
++	 */
 +	protected PortView getFreeOutPortViewAt(int x, int y) {
 +		return mediator.getFreeOutPortViewAt(x, y);
 +	}
@@ -2101,15 +1996,16 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  import jmt.gui.jsimgraph.definitions.JMTPoint;
  import jmt.gui.jsimgraph.definitions.JSimGraphModel;
  import jmt.gui.jsimgraph.definitions.JmodelClassDefinition;
-@@ -233,6 +179,7 @@
+@@ -233,6 +179,8 @@
  	private AbstractJmodelAction takeScreenShot;
  	private AbstractJmodelAction actionRotate;
  	private AbstractJmodelAction actionSetRight;
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +	private AbstractJmodelAction actionSnapToGrid;
  	private AbstractJmodelAction editUndo;
  	private AbstractJmodelAction editRedo;
  
-@@ -320,6 +267,7 @@
+@@ -320,6 +268,7 @@
  		addBlockingRegion = new AddBlockingRegion(this);
  
  		actionSetRight = new ActionSetRight(this);
@@ -2117,19 +2013,21 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		takeScreenShot = new TakeScreenShot(this);
  
  		actionRotate = new ActionRotate(this);
-@@ -330,6 +278,8 @@
+@@ -330,6 +279,9 @@
  		switchToExactSolver = new SwitchToExactSolver(this);
  		// Initialize new Component bar
  		componentBar = new ComponentBar(this);
 +
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		((JmtRouting)JmtGraphConstants.ROUTING_JMT).setMediator(this);
  	}
  
  	/**
-@@ -415,6 +365,10 @@
+@@ -415,6 +367,11 @@
  		addBlockingRegion.setEnabled(state);
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +	public void enableSnapToGrid(boolean state) {
 +		actionSnapToGrid.setEnabled(state);
 +	}
@@ -2137,10 +2035,11 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	public void enableSetRight(boolean state) {
  		actionSetRight.setEnabled(state);
  	}
-@@ -423,6 +377,10 @@
+@@ -423,6 +380,11 @@
  		return actionSetRight;
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +	public AbstractJmodelAction getSnapToGrid() {
 +		return actionSnapToGrid;
 +	}
@@ -2148,27 +2047,32 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	public AbstractJmodelAction getEditDefaults() {
  		return editDefaults;
  	}
-@@ -689,6 +647,7 @@
+@@ -689,6 +651,8 @@
  		setSelect.setEnabled(false);
  		actionRotate.setEnabled(false);
  		actionSetRight.setEnabled(false);
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		actionSnapToGrid.setEnabled(false);
  
  		// Enable the action to perform editing user classes
  		editUserClasses.setEnabled(true);
-@@ -781,6 +740,7 @@
+@@ -781,6 +745,8 @@
  		actionDelete.setEnabled(false);
  		actionRotate.setEnabled(false);
  		actionSetRight.setEnabled(false);
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		actionSnapToGrid.setEnabled(false);
  
  		setSelect.setEnabled(false);
  		simulate.setEnabled(false);
-@@ -1017,6 +977,20 @@
+@@ -1017,6 +983,23 @@
  			// Visualizes connection only if it can be created into data structure
  			if (model.setConnected(sourceKey, targetKey, true)) {
  				graph.getModel().insert(insert, viewMap, cs, null, null);
-+			} else { // duplicate connection
++			} else {
++				// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++				// duplicate connection
++				// remove the new ports created just before
 +				InputPort inputPort = (InputPort) inPort.getCell();
 +				JmtCell target = (JmtCell) inputPort.getParent();
 +				if (target != null && target.numInEdges() > 1) {
@@ -2185,16 +2089,17 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			}
  		}
  	}
-@@ -1062,7 +1036,7 @@
+@@ -1062,7 +1045,8 @@
  		viewMap.put(connection, map);
  		Object[] insert = new Object[] { connection };
  		ConnectionSet cs = new ConnectionSet();
 -		// Finds sourcePort
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		// Finds free sourcePort
  		Iterator it;
  		it = source.getChildren().iterator();
  		DefaultPort tmpPort, sourcePort, targetPort;
-@@ -1069,27 +1043,53 @@
+@@ -1069,27 +1053,58 @@
  		sourcePort = null;
  		while (it.hasNext()) {
  			tmpPort = (DefaultPort) it.next();
@@ -2205,6 +2110,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
 -		// Finds targetPort
 +
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		// Otherwise create a new one
 +		if (sourcePort == null) {
 +			sourcePort = new OutputPort(source);
@@ -2213,6 +2119,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +			graph.getGraphLayoutCache().putMapping(sourcePort, new PortView(sourcePort));
 +		}
 +
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		// Finds free targetPort
  		it = target.getChildren().iterator();
  		targetPort = null;
@@ -2231,6 +2138,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 -				graph.getModel().insert(insert, viewMap, cs, null, null);
 -				return connection;
 +
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		// Otherwise create a new one
 +		if (targetPort == null) {
 +			targetPort = new InputPort(target);
@@ -2245,7 +2153,9 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +		if (model.setConnected(sourceKey, targetKey, true) || forced) {
 +			graph.getModel().insert(insert, viewMap, cs, null, null);
 +			return connection;
-+		} else { // Add failed, remove ports if necessary
++		} else {
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Add failed, remove ports if necessary
 +			if (source.numOutEdges() > 1) {
 +				source.SubOut();
 +				source.remove(sourcePort);
@@ -2258,13 +2168,20 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  		return null;
  	}
-@@ -1122,8 +1122,15 @@
+@@ -1122,8 +1137,22 @@
  	 */
  	public PortView getInPortViewAt(int x, int y) {
  		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getInPortAt(x, y), false);
 +
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	/** gets the first free portView of the input port of the cell at position
++	 *
++	 * @param x
++	 * @param y
++	 * @return the portView of the input port
++	 */
 +	public PortView getFreeInPortViewAt(int x, int y) {
 +		InputPort p = graph.getFreeInPortAt(x, y);
 +		return (PortView) graph.getGraphLayoutCache().getMapping(p, false);
@@ -2274,7 +2191,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	/** gets the first portView of the output port of the cell at position
  	 *
  	 * @param x
-@@ -1166,6 +1173,7 @@
+@@ -1166,6 +1195,7 @@
  					((CellComponent) jcell.getUserObject()).getKey());
  			// Adds on the top a panel to change station name
  			stationPanel.add(new StationNamePanel(model, ((CellComponent) jcell.getUserObject()).getKey()), BorderLayout.NORTH);
@@ -2282,12 +2199,14 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			dialogFactory.getDialog(stationPanel, "Editing " + jcell.getUserObject().toString() + " Properties...");
  
  			// Updates cell dimensions if name was changed too much...
-@@ -1179,7 +1187,20 @@
+@@ -1179,7 +1209,22 @@
  				jcell.updatePortPositions(nest, GraphConstants.getIcon(attr), cellDimension);
  				graph.getGraphLayoutCache().edit(nest);
  			}
 -		}
 +
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Change icon so to display a small lock indicating that this component is pinned
 +			if (oldPinState != jcell.isPinned()) {
 +				ImageIcon lockIcon = JMTImageLoader.loadImage("lock", new Dimension(16, 16));
 +				Icon newIcon;
@@ -2304,24 +2223,30 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Blocking region editing
  		else if ((cell != null) && (cell instanceof BlockingRegion)) {
  			Object regionKey = ((BlockingRegion) cell).getKey();
-@@ -1290,11 +1311,27 @@
+@@ -1290,11 +1335,33 @@
  
  		if (!edges.isEmpty()) {
  			// Removes edges from graph
 +			List<Object> cellsList = java.util.Arrays.asList(cells);
 +			for (Object e: edges) {
-+				if (cellsList.indexOf(e) < 0) { // delete only unselected edges
++				if (cellsList.indexOf(e) < 0) {
++					// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++					// delete only unselected edges
 +					JmtEdge link = (JmtEdge) e;
 +					InputPort targetPort = (InputPort) link.getTarget();
 +					JmtCell target = (JmtCell) targetPort.getParent();
-+					if (target.numInEdges() > 1) { // avoids situation in which there are no InputPorts for target
++					if (target.numInEdges() > 1) {
++						// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++						// avoid situation in which there are no InputPorts for target
 +						target.SubIn();
 +						target.remove(targetPort);
 +					}
 +
 +					OutputPort sourcePort = (OutputPort) link.getSource();
 +					JmtCell source = (JmtCell) sourcePort.getParent();
-+					if (source.numOutEdges() > 1) { // avoids situation in which there are no OutputPorts for source
++					if (source.numOutEdges() > 1) {
++						// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++						// avoid situation in which there are no OutputPorts for source
 +						source.SubOut();
 +						source.remove(sourcePort);
 +					}
@@ -2335,23 +2260,27 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Checks if all children of a blocking region have been removed
  		Iterator<Object> it = regions.iterator();
  		while (it.hasNext()) {
-@@ -1333,10 +1370,30 @@
+@@ -1333,10 +1400,34 @@
  				model.deleteStation(((CellComponent) ((JmtCell) cell).getUserObject()).getKey());
  			} else if (cell instanceof JmtEdge) {
  				JmtEdge link = (JmtEdge) cell;
 +				InputPort targetPort = (InputPort) link.getTarget();
++				// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +				if (targetPort != null) {
 +					JmtCell target = (JmtCell) targetPort.getParent();
-+					if (target.numInEdges() > 1) { // avoids situation in which there are no InputPorts for target
++					if (target.numInEdges() > 1) {
++						// avoid situation in which there are no InputPorts for target
 +						target.SubIn();
 +						target.remove(targetPort);
 +					}
 +				}
 +
++				// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +				OutputPort sourcePort = (OutputPort) link.getSource();
 +				if (sourcePort != null) {
 +					JmtCell source = (JmtCell) sourcePort.getParent();
-+					if (source.numOutEdges() > 1) { // avoids situation in which there are no OutputPorts for source
++					if (source.numOutEdges() > 1) {
++						// avoid situation in which there are no OutputPorts for source
 +						source.SubOut();
 +						source.remove(sourcePort);
 +					}
@@ -2366,7 +2295,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// If no stations remains gray select and link buttons
  		if (graphmodel.getRootCount() == 0) {
  			componentBar.clearButtonGroupSelection(0);
-@@ -1343,6 +1400,7 @@
+@@ -1343,6 +1434,7 @@
  			setConnect.setEnabled(false);
  			setSelect.setEnabled(false);
  			actionSetRight.setEnabled(false);
@@ -2374,7 +2303,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -2884,14 +2942,21 @@
+@@ -2884,14 +2976,21 @@
  			JmtCell current = (JmtCell) cell;
  			Map<Object, Map> nested = new Hashtable<Object, Map>();
  			Map attributeMap = new Hashtable();
@@ -2398,40 +2327,46 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			nested.put(cell, attributeMap);
  			current.setLeftInputCell(!current.isLeftInputCell());
  			current.updatePortPositions(nested, icon, current.getSize(graph));
-@@ -3089,7 +3154,9 @@
+@@ -3089,7 +3188,11 @@
  						- (int) (boundspadre.getHeight() / 2) + 30);
  			}
  
 -			GraphConstants.setBounds(prev.getAttributes(), boundspadre);
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Don't move this component if it is pinned
 +			if (!prev.isPinned()) {
 +				GraphConstants.setBounds(prev.getAttributes(), boundspadre);
 +			}
  			x = (int) boundspadre.getCenterX() + widthMax + 50;
  			prev.seen = true;
  			flag2 = true;
-@@ -3121,7 +3188,8 @@
+@@ -3121,7 +3224,10 @@
  			Rectangle bounds = GraphConstants.getBounds(((JmtCell) next.get(0)).getAttributes()).getBounds();
  			bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  					(int) boundspadre.getCenterY() - (int) (bounds.getHeight() / 2));
 -			GraphConstants.setBounds(((JmtCell) next.get(0)).getAttributes(), bounds);
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++			// Don't move this component if it is pinned
 +			if (!(((JmtCell) next.get(0)).isPinned()))
 +				GraphConstants.setBounds(((JmtCell) next.get(0)).getAttributes(), bounds);
  
  			((JmtCell) next.get(0)).seen = true;
  			j = searchNext((JmtCell) next.get(0));
-@@ -3160,8 +3228,10 @@
+@@ -3160,8 +3266,12 @@
  				Rectangle bounds = GraphConstants.getBounds(((JmtCell) sons.get(i)).getAttributes()).getBounds();
  				bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  						w - (int) (bounds.getHeight() / 2) + 80);
 -				GraphConstants.setBounds(((JmtCell) sons.get(i)).getAttributes(), bounds);
  
++				// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++				// Don't move this component if it is pinned
 +				if (!(((JmtCell) sons.get(i)).isPinned()))
 +					GraphConstants.setBounds(((JmtCell) sons.get(i)).getAttributes(), bounds);
 +
  				((JmtCell) sons.get(i)).seen = true;
  				listEdges = DefaultGraphModel.getOutgoingEdges(graphmodel, sons.get(i));
  
-@@ -3324,6 +3394,7 @@
+@@ -3324,6 +3434,7 @@
  			setConnect.setEnabled(false);
  			setSelect.setEnabled(false);
  			actionSetRight.setEnabled(false);
@@ -2439,18 +2374,30 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -3349,4 +3420,185 @@
+@@ -3349,4 +3460,212 @@
  		}
  	}
  
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	/**
++	 *
++	 * @param x
++	 * @param y
++	 * @return
++	 */
 +	public PortView getFreeOutPortViewAt(int x, int y) {
 +		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getFreeOutPortAt(x, y), false);
 +	}
 +
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	// Try to adjust the graph, then displays a confirmation message to prompt the user to keep the result or restore the initial state
 +	public void tryAdjustGraph() {
++		// This introduces some potential quirks that need to be fixed
 +		boolean atLeastOnePinned = false;
 +		Object[] cells = graph.getDescendants(graph.getRoots());
++		// Previous cell positions
 +		Rectangle2D[] cellsBounds = new Rectangle2D[cells.length];
++		// The algorithm changes the rotate state, we need to save them in order to restore if the users undoes the operation
 +		boolean[] cellsRotateState = new boolean[cells.length];
 +		for (int i = 0; i < cells.length; i++) {
 +			if (cells[i] instanceof JmtCell) {
@@ -2466,6 +2413,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +
 +		adjustGraph();
 +
++		// Simple heuristics that prevents components to be arranged of the graph's bounds
 +		if (atLeastOnePinned) {
 +			double direction;
 +			double minDistance = Double.POSITIVE_INFINITY;
@@ -2478,6 +2426,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +					if (!cell.isPinned()) {
 +						Rectangle2D repositionedBounds = GraphConstants.getBounds(cell.getAttributes()).getBounds();
 +						double euclideanDist = Math.sqrt(Math.pow((cellsBounds[i].getX() - repositionedBounds.getX()), 2) + Math.pow((cellsBounds[i].getY() - repositionedBounds.getY()), 2));
++						// Store the minimum euclidean distance between the original component position and the arranged one, and the slope of this segment
 +						if (euclideanDist < minDistance) {
 +							minDistance = euclideanDist;
 +							slope = (repositionedBounds.getY() - cellsBounds[i].getY()) / (repositionedBounds.getX() - cellsBounds[i].getX());
@@ -2500,6 +2449,9 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +							} else {
 +								direction = -1;
 +							}
++							// Move all the other components by the same amount of distance, constrained by the fact that
++							// the movement segment should have the same slope of the minimum
++							// one found in the previous cycle.
 +							double xfinal = direction * Math.sqrt(minDistance * minDistance / (1 + slope * slope)) + repositionedBounds.getX();
 +							double yfinal = slope * (xfinal - repositionedBounds.getX()) + repositionedBounds.getY();
 +							repositionedBounds.setRect(xfinal, yfinal, repositionedBounds.getWidth(), repositionedBounds.getHeight());
@@ -2514,8 +2466,10 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +			avoidOverlappingCell(cells);
 +		}
 +
++		// Display confirmation message
 +		int result = JOptionPane.showConfirmDialog(mainWindow, "Keep the result of autoarrange?", "Autoarrange", JOptionPane.YES_NO_OPTION);
 +		if (result == JOptionPane.NO_OPTION) {
++			// Restore cells position and rotate state in case of undo
 +			for (int i = 0; i < cells.length; i++) {
 +				if(cells[i] instanceof JmtCell) {
 +					JmtCell cell = (JmtCell) cells[i];
@@ -2531,6 +2485,9 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +		}
 +	}
 +
++
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	// Reposition components by aligning them to a grid with user-supplied cell size
 +	public void snapToGrid() {
 +		int cellSize;
 +		String size = JOptionPane.showInputDialog(mainWindow, "Please specify the cells size in pixels:");
@@ -2557,6 +2514,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +				}
 +			}
 +
++			// With larger cell size, some components may overlap, solve this issue by moving the necessary components in adjacent cells.
 +			boolean needRecompute = true;
 +			while (needRecompute) {
 +				needRecompute = false;
@@ -2590,6 +2548,8 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +		}
 +	}
 +
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	// Try to snap components to the grid, then displays a confirmation message to prompt the user to keep the result or restore the initial state
 +	public void trySnapToGrid() {
 +		Object[] cells = graph.getDescendants(graph.getRoots());
 +		Rectangle2D[] cellsBounds = new Rectangle2D[cells.length];
@@ -2618,6 +2578,8 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +
 +	}
 +
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	// Checks whether two rectangles intersect.
 +	private boolean intersectRect(Rectangle2D r1, Rectangle2D r2) {
 +		return !(r2.getMinX() > r1.getMaxX() ||
 +				r2.getMaxX() < r1.getMinX() ||
@@ -2638,11 +2600,14 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/actions/ActionSetRight.java
  /**
   * A class representing a "redo" action.
   * @author Giuseppe De Cicco & Fabio Granara
-@@ -35,6 +37,6 @@
+@@ -34,7 +36,9 @@
+ 	 */
  	boolean repeat = false;
  
++
  	public void actionPerformed(ActionEvent e) {
 -		mediator.adjustGraph();
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		mediator.tryAdjustGraph();
  	}
  }
@@ -2675,15 +2640,16 @@ Index: src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java
  import javax.swing.border.EtchedBorder;
  import javax.swing.border.TitledBorder;
  
-@@ -49,6 +46,7 @@
+@@ -49,6 +46,8 @@
  	private JmodelStationDefinition sd;
  	private Object key;
  	private JTextField name = new JTextField();
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +	private JCheckBox pinned = new JCheckBox();
  
  	/**
  	 * Creates a new Station Name Panel
-@@ -65,13 +63,22 @@
+@@ -65,15 +64,28 @@
  	 * Inits this panel's components and their action listeners
  	 */
  	private void init() {
@@ -2696,22 +2662,29 @@ Index: src/main/java/jmt/gui/jsimgraph/panels/StationNamePanel.java
  		name.setText(sd.getStationName(key));
 +		pinned.setSelected(sd.isPinned(key));
  		add(name, BorderLayout.CENTER);
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +		pinPanel.add(new JLabel("Pin:"), BorderLayout.WEST);
 +		pinPanel.add(pinned, BorderLayout.CENTER);
++
 +		add(pinPanel, BorderLayout.EAST);
  		add(Box.createVerticalStrut(5), BorderLayout.SOUTH);
  		inputListener listener = new inputListener();
-+		pinned.addFocusListener(listener);
-+		pinned.addKeyListener(listener);
  		name.addKeyListener(listener);
  		name.addFocusListener(listener);
++
++		// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++		pinned.addFocusListener(listener);
++		pinned.addKeyListener(listener);
  	}
-@@ -86,7 +93,9 @@
+ 
+ 	/**
+@@ -86,7 +98,10 @@
  		 */
  		protected void updateValues() {
  			sd.setStationName(key, name.getText());
 +			sd.setIsPinned(key, pinned.isSelected());
  			name.setText(sd.getStationName(key));
++			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +			pinned.setSelected(sd.isPinned(key));
  		}
  

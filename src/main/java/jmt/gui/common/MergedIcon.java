@@ -9,6 +9,11 @@ import java.awt.image.BufferedImage;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+/**
+ * Class for merging to different icons into a new one
+ * @author Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
+ * @date 30/Jan/2017
+ */
 public class MergedIcon implements Icon {
 
     private int m_iconWidth;
