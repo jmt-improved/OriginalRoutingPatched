@@ -233,19 +233,6 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/CellComponent.java
  	 * Returns key referencing this station
  	 * @return this station's key
  	 */
-Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java
-===================================================================
---- src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(revision 978)
-+++ src/main/java/jmt/gui/jsimgraph/JGraphMod/ClassSwitchCell.java	(working copy)
-@@ -20,7 +20,7 @@
- 
- import org.jgraph.graph.Port;
- 
-- /**
-+/**
-  * It represent a component that switches class of jobs coming into it. 
-  * @author John
-  *
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java	(revision 978)
