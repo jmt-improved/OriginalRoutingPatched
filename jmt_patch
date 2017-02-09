@@ -703,7 +703,48 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
  	//    public ArrayList intersectionEdgePoint2=new ArrayList();
  
  	public JmtEdge() {
-@@ -767,4 +788,38 @@
+@@ -162,7 +183,8 @@
+ 			Point2D tmpMin = controlPoints[i];
+ 			Point2D tmpMax = controlPoints[i + 1];
+ 			//nel caso di lati che vanno nel verso oposto
+-			if ((tmpMin.getX() > tmpMax.getX()) || (tmpMin.getY() > tmpMax.getY())) {
++			// Modified by Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio to take into account multi arrows that can have +-1 difference pixels
++			if ((Math.abs(tmpMax.getX() - tmpMin.getX()) > 1 && (tmpMin.getX()) > tmpMax.getX()) || (Math.abs(tmpMax.getY() - tmpMin.getY()) > 1 && tmpMin.getY() > tmpMax.getY())) {
+ 				tmpMin = controlPoints[i + 1];
+ 				tmpMax = controlPoints[i];
+ 			}
+@@ -180,7 +202,7 @@
+ 						upperSide = true;
+ 						//    					System.out.println("Valore del controlMin "+(int)tmpMin.getX());
+ 						//    					System.out.println("Valore del controlMax "+tmpMax.getX());
+-						upperPoint = new Point2D.Double((int) tmpMin.getX(), (int) minY);
++						upperPoint = new Point2D.Double((int) tmpMax.getX(), (int) minY);
+ 						intersectionVertexPoint.add(upperPoint);
+ 						//    					System.out.println("upper INTERSECTION");
+ 						//    					System.out.println("Intersezione Sopra: x="+tmpMin.getX()+", y="+minY);
+@@ -187,7 +209,7 @@
+ 					}
+ 					if (maxY < tmpMax.getY() && maxY > tmpMin.getY()) {
+ 						lowerSide = true;
+-						lowPoint = new Point2D.Double((int) tmpMin.getX(), (int) maxY);
++						lowPoint = new Point2D.Double((int) tmpMax.getX(), (int) maxY);
+ 						intersectionVertexPoint.add(lowPoint);
+ 
+ 						//    					System.out.println("lower INTERSECTION");
+@@ -250,9 +272,9 @@
+ 			intersectionVertexPoint.set(0, lowPoint);
+ 			intersectionVertexPoint.set(1, leftPoint);
+ 		} else if (upperSide && lowerSide) {
+-			intersectionVertexPoint.set(0, upperPoint);
+-			intersectionVertexPoint.set(1, lowPoint);
+-
++			//intersectionVertexPoint.set(0, upperPoint);
++			//intersectionVertexPoint.set(1, lowPoint);
++			intersectionVertexPoint.set(0, new Point2D.Double(Math.max(upperPoint.getX(), lowPoint.getX()), Math.max(upperPoint.getY(), lowPoint.getY())));
+ 		}
+ 		//    	if (intersectionVertexPoint2.size()>0) {
+ 		//    		System.out.println("Subito dopo il tutto: primo punto: x= "+((Point2D)(intersectionVertexPoint2.get(0))).getX()+", y="+((Point2D)(intersectionVertexPoint2.get(0))).getY());
+@@ -767,4 +789,38 @@
  		return (int) (max - boundsSource.getMaxX());
  	}
  
@@ -742,11 +783,137 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
 +
 +
  }
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java	(working copy)
+@@ -32,6 +32,9 @@
+  * <p>Title: JmtEdgeRenderer </p>
+  * @author Giuseppe De Cicco & Fabio Granara
+  * 		Date: 15-ott-2006
++ * 	Modified by  Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio to take into account +-1 pixel offset
++ * 		         on y coordinates due rounding imprecisions when arranging multiple arrows within the same component
++ * 		Date: 09-feb-2017
+  * 
+  */
+ public class JmtEdgeRenderer extends EdgeRenderer {
+@@ -138,7 +141,7 @@
+ 								 * */
+ 								if (cell.isRing && i == 4) {
+ 									//	  	        			   System.out.println("____________ENTRATO NEL RING____________");
+-									if ((int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
++									if (Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
+ 											&& (((int) p[i].getX() < (int) ((cell.intersectionEdgePoint.get(j))).getX()))) {
+ 										int intersectionPoint = (int) ((cell.intersectionEdgePoint.get(j))).getX();
+ 
+@@ -147,7 +150,7 @@
+ 													.getX()) / 2), (float) ((p[4])).getY() - 10, (float) ((p[5]).getX()), (float) ((p[5]).getY()));
+ 											view.sharedPath.moveTo((float) (p[5].getX()), (float) (p[5]).getY());
+ 										}
+-									} else if ((int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
++									} else if (Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
+ 											&& (((int) p[i].getX() > (int) ((cell.intersectionEdgePoint.get(j))).getX()))) {
+ 										int intersectionPoint = (int) ((cell.intersectionEdgePoint.get(j))).getX();
+ 										if ((p[5].getX() < p[4].getX()) && (intersectionPoint > ((int) p[5].getX()))) {
+@@ -158,8 +161,8 @@
+ 
+ 									}
+ 								} else {
+-									if ((int) p[i + 1].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
+-											&& (int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
++									if (Math.abs((int) p[i + 1].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
++											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
+ 											&& (((int) p[i].getX() < (int) ((cell.intersectionEdgePoint.get(j))).getX()))
+ 											&& (((int) p[i + 1].getX() > (int) ((cell.intersectionEdgePoint.get(j))).getX()))) {
+ 
+@@ -167,7 +170,7 @@
+ 										if (((j + 1) < cell.intersectionEdgePoint.size())
+ 												&& (((cell.intersectionEdgePoint.get(j + 1))).getX() > ((cell.intersectionEdgePoint.get(j))).getX())
+ 												&& (((cell.intersectionEdgePoint.get(j + 1))).getX() - ((cell.intersectionEdgePoint.get(j))).getX() < 10)
+-												&& ((cell.intersectionEdgePoint.get(j))).getY() == ((cell.intersectionEdgePoint.get(j + 1))).getY()) {
++												&& Math.abs(((cell.intersectionEdgePoint.get(j))).getY() - ((cell.intersectionEdgePoint.get(j + 1))).getY()) <= 1) {
+ 											double middleX = (((cell.intersectionEdgePoint.get(j + 1))).getX() + ((cell.intersectionEdgePoint.get(j)))
+ 													.getX()) / 2;
+ 
+@@ -203,9 +206,9 @@
+ 									//per cui la costruzione deve avvenire in modo inverso
+ 									else if (((passato == false) || ((passato == true) && (tmp1.size() > 0) && (!tmp1
+ 											.contains(cell.intersectionEdgePoint.get(j)))))
+-											&& (int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
++											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
+ 											&& (((int) p[i].getX() > (int) p[i + 1].getX()))
+-											&& (int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
++											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
+ 											&& (int) p[i + 1].getX() < (int) ((cell.intersectionEdgePoint.get(j))).getX()) {
+ 										//	  	        			   System.out.println("Entratooooooooooooooooooooooooo in elseif");
+ 										//questo if serve per fare un grande arco quando ci sono due punti di int. vicini
+@@ -214,7 +217,7 @@
+ 
+ 										int contatore = 0;
+ 										for (int q = 0; q < cell.intersectionEdgePoint.size(); q++) {
+-											if ((cell.intersectionEdgePoint.get(q)).getY() == (cell.intersectionEdgePoint.get(j)).getY()) {
++											if (Math.abs((cell.intersectionEdgePoint.get(q)).getY() - (cell.intersectionEdgePoint.get(j)).getY()) <= 1) {
+ 												tmp1.add((cell.intersectionEdgePoint.get(q)).clone());
+ 												//	  	        	 			cell.intersectionEdgePoint.remove(((Point2D)cell.intersectionEdgePoint.get(q)));
+ 												contatore++;
+@@ -258,7 +261,7 @@
+ 
+ 											} else {
+ 
+-												if ((int) p[i].getY() == (int) ((Point2D) (tmp1.get(x))).getY()) {
++												if (Math.abs((int) p[i].getY() - (int) ((Point2D) (tmp1.get(x))).getY()) <= 1) {
+ 													view.sharedPath.lineTo((float) ((Point2D) (tmp1.get(x))).getX() + 5, (float) ((Point2D) (tmp1
+ 															.get(x))).getY());
+ 													view.sharedPath.moveTo((float) ((Point2D) (tmp1.get(x))).getX() + 5, (float) ((Point2D) (tmp1
+@@ -293,9 +296,9 @@
+ 							//	  	        			   System.out.println("Punti sull'asse"+pointOnFirstPoints.size());
+ 							for (int j = 0; j < pointOnFirstPoints.size(); j++) {
+ 								if ((p[1].getX() - p[0].getX()) > 0) {
+-									if ((int) p[0].getY() == (int) ((Point2D) (pointOnFirstPoints.get(j))).getY()) {
++									if (Math.abs((int) p[0].getY() - (int) ((Point2D) (pointOnFirstPoints.get(j))).getY()) <= 1) {
+ 										//	  		            			 System.out.println("entro per sistemare il punto zero in jmtedgerenderer");
+-										if ((p[0].getY() == ((Point2D) pointOnFirstPoints.get(j)).getY())
++										if (Math.abs((p[0].getY() - ((Point2D) pointOnFirstPoints.get(j)).getY())) <= 1
+ 												&& ((int) p[0].getX() < (int) ((Point2D) (pointOnFirstPoints.get(j))).getX())
+ 												&& (int) ((Point2D) (pointOnFirstPoints.get(j))).getX() < (int) p[1].getX()) {
+ 											//	  		            					c'era 20 e non 10  
+@@ -306,8 +309,8 @@
+ 															.getX())
+ 													&& (((Point2D) (pointOnFirstPoints.get(j + 1))).getX()
+ 															- ((Point2D) (pointOnFirstPoints.get(j))).getX() < 10)
+-													&& ((Point2D) (pointOnFirstPoints.get(j))).getY() == ((Point2D) (pointOnFirstPoints.get(j + 1)))
+-															.getY()) {
++													&& Math.abs(((Point2D) (pointOnFirstPoints.get(j))).getY() - ((Point2D) (pointOnFirstPoints.get(j + 1)))
++															.getY()) <= 1) {
+ 												double middleX = (((Point2D) (pointOnFirstPoints.get(j + 1))).getX() + ((Point2D) (pointOnFirstPoints
+ 														.get(j))).getX()) / 2;
+ 
+@@ -361,7 +364,7 @@
+ 
+ 									boolean arcogrande = false;
+ 									//	  		            			System.out.println("Sono uguali di y: "+(((Point2D)cell.intersectionEdgePoint.get(cell.intersectionEdgePoint.size()-j-1)).getY()==(int)p[0].getY())+"Coordinata x del punto 0: "+p[0].getX()+"Punto di int: "+((Point2D)cell.intersectionEdgePoint.get(cell.intersectionEdgePoint.size()-j-1)).getX());
+-									if (((int) p[0].getY() == (int) ((Point2D) pointOnFirstPoints.get(j)).getY())
++									if (Math.abs((int) p[0].getY() -(int) ((Point2D) pointOnFirstPoints.get(j)).getY()) <= 1
+ 											&& (((int) p[0].getX() > (int) ((Point2D) (pointOnFirstPoints.get(j))).getX()) && (int) ((Point2D) (pointOnFirstPoints
+ 													.get(j))).getX() > (int) p[1].getX())) {
+ 										if (((j + 1) < pointOnFirstPoints.size())
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java	(working copy)
-@@ -27,13 +27,7 @@
+@@ -18,23 +18,21 @@
+ 
+ package jmt.gui.jsimgraph.JGraphMod;
+ 
+-import java.awt.Graphics;
++import java.awt.*;
++import java.awt.geom.Point2D;
+ 
+ import jmt.common.GlobalSettings;
+ import jmt.gui.common.Defaults;
++import jmt.gui.common.JMTImageLoader;
+ import jmt.gui.jsimgraph.controller.Mediator;
+ 
  import org.freehep.graphics2d.VectorGraphics;
  import org.freehep.graphicsbase.util.export.ExportDialog;
  import org.jgraph.JGraph;
@@ -759,9 +926,12 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
 -import org.jgraph.graph.GraphModel;
 +import org.jgraph.graph.*;
  
++import javax.swing.*;
++
  /** Jmt version of JGraph.
  
-@@ -167,6 +161,30 @@
+  * @author Federico Granata
+@@ -167,6 +165,36 @@
  		return null;
  	}
  
@@ -781,9 +951,15 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
 +		}
 +		if (cell != null) {
 +			InputPort newPort = new InputPort(cell);
++			Icon i = JMTImageLoader.loadImage(cell.getIcon());
++			Dimension d = (Dimension) cell.getAttributes().get("size");
++			Point offset = cell.getInPortOffset(i, d);
++			newPort.getAttributes().put("offset", new Point2D.Double(offset.getX(), offset.getY() - 159));
 +			cell.insert(newPort, cell.getChildCount() - 1);
 +			cell.AddIn();
-+			getGraphLayoutCache().putMapping(newPort, new PortView(newPort));
++			PortView newPortView = new PortView(newPort);
++			getGraphLayoutCache().putMapping(newPort, newPortView);
++			newPortView.refresh(graphModel, graphLayoutCache, false);
 +			return newPort;
 +		}
 +		return null;
@@ -792,7 +968,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
  	/** Gets the outport port for the cell under Point(x,y)
  	 *
  	 * @param x  horizontal coordinate
-@@ -242,6 +260,31 @@
+@@ -242,6 +270,37 @@
  		Defaults.save();
  	}
  
@@ -813,9 +989,15 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
 +		}
 +		if (cell != null) {
 +			OutputPort newPort = new OutputPort(cell);
++			Icon i = JMTImageLoader.loadImage(cell.getIcon());
++			Dimension d = (Dimension) cell.getAttributes().get("size");
++			Point offset = cell.getOutPortoffset(i, d);
++			newPort.getAttributes().put("offset", new Point2D.Double(offset.getX(), offset.getY() - 159));
 +			cell.insert(newPort, cell.getChildCount() - 1);
 +			cell.AddOut();
-+			getGraphLayoutCache().putMapping(newPort, new PortView(newPort));
++			PortView newPortView = new PortView(newPort);
++			getGraphLayoutCache().putMapping(newPort, newPortView);
++			newPortView.refresh(graphModel, graphLayoutCache, false);
 +			return newPort;
 +		}
 +		return null;
@@ -1125,8 +1307,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +				}
 +
 +				// Calculate space between ports/edges based on #number of outgoing edges + 1
-+				double division = sourceSize.getHeight() / (source.numOutEdges() + 1.0);
-+				double divisionOffset = source.getOutPortoffset(i, d).getY() * 2 / (source.numOutEdges() + 1.0);
++				double division = Math.floor(sourceSize.getHeight() / (source.numOutEdges() + 1.0));
++				double divisionOffset = Math.floor(source.getOutPortoffset(i, d).getY() * 2 / (source.numOutEdges() + 1.0));
 +
 +				// The whole list is partitioned in three sub lists one for each type of edge
 +				// For each sublist a different order criteria is applied.
@@ -1346,8 +1528,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +					}
 +				}
 +
-+				double division = targetSize.getHeight() / (target.numInEdges() + 1.0);
-+				double divisionOffset = target.getInPortOffset(i, d).getY() * 2 / (target.numInEdges() + 1.0);
++				double division = Math.floor(targetSize.getHeight() / (target.numInEdges() + 1.0));
++				double divisionOffset = Math.floor(target.getInPortOffset(i, d).getY() * 2 / (target.numInEdges() + 1.0));
 +
 +				Map<Boolean, List<InputPort>> parts = partition(new Predicate<InputPort>() {
 +					@Override
@@ -1831,7 +2013,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  
  		setSelect.setEnabled(false);
  		simulate.setEnabled(false);
-@@ -1017,7 +978,62 @@
+@@ -1017,7 +978,64 @@
  			// Visualizes connection only if it can be created into data structure
  			if (model.setConnected(sourceKey, targetKey, true)) {
  				graph.getModel().insert(insert, viewMap, cs, null, null);
@@ -1857,13 +2039,13 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +			JmtCell target = (JmtCell) ((InputPort) inPort.getCell()).getParent();
 +			if (target != null && target.getChildren().size() > 2) {
 +				for(Object child : target.getChildren()) {
-+					if (child instanceof InputPort) {
++					if (child instanceof InputPort && target.numInEdges() > 1) {
 +						InputPort childInput = (InputPort) child;
 +						if (childInput.getEdges().size() == 0) {
 +							target.SubIn();
 +							target.remove(childInput);
 +						}
-+					} else if (child instanceof OutputPort) {
++					} else if (child instanceof OutputPort && target.numOutEdges() > 1) {
 +						OutputPort childOutput = (OutputPort) child;
 +						if (childOutput.getEdges().size() == 0) {
 +							target.SubOut();
@@ -1878,14 +2060,16 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
 +				for(Object child : source.getChildren()) {
 +					if (child instanceof InputPort) {
 +						InputPort childInput = (InputPort) child;
-+						if (childInput.getEdges().size() == 0) {
++						if (childInput.getEdges().size() == 0 && source.numInEdges() > 1) {
 +							source.SubIn();
++							System.out.println("Removing inport");
 +							source.remove(childInput);
 +						}
-+					} else if (child instanceof OutputPort) {
++					} else if (child instanceof OutputPort && source.numOutEdges() > 1) {
 +						OutputPort childOutput = (OutputPort) child;
 +						if (childOutput.getEdges().size() == 0) {
 +							source.SubOut();
++							System.out.println("Removing outport");
 +							source.remove(childOutput);
 +						}
 +					}
@@ -1894,7 +2078,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  	}
  
-@@ -1062,7 +1078,8 @@
+@@ -1062,7 +1080,8 @@
  		viewMap.put(connection, map);
  		Object[] insert = new Object[] { connection };
  		ConnectionSet cs = new ConnectionSet();
@@ -1904,7 +2088,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		Iterator it;
  		it = source.getChildren().iterator();
  		DefaultPort tmpPort, sourcePort, targetPort;
-@@ -1069,27 +1086,58 @@
+@@ -1069,27 +1088,58 @@
  		sourcePort = null;
  		while (it.hasNext()) {
  			tmpPort = (DefaultPort) it.next();
@@ -1973,7 +2157,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  		return null;
  	}
-@@ -1122,8 +1170,22 @@
+@@ -1122,8 +1172,22 @@
  	 */
  	public PortView getInPortViewAt(int x, int y) {
  		return (PortView) graph.getGraphLayoutCache().getMapping(graph.getInPortAt(x, y), false);
@@ -1996,7 +2180,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  	/** gets the first portView of the output port of the cell at position
  	 *
  	 * @param x
-@@ -1166,6 +1228,7 @@
+@@ -1166,6 +1230,7 @@
  					((CellComponent) jcell.getUserObject()).getKey());
  			// Adds on the top a panel to change station name
  			stationPanel.add(new StationNamePanel(model, ((CellComponent) jcell.getUserObject()).getKey()), BorderLayout.NORTH);
@@ -2004,7 +2188,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			dialogFactory.getDialog(stationPanel, "Editing " + jcell.getUserObject().toString() + " Properties...");
  
  			// Updates cell dimensions if name was changed too much...
-@@ -1179,7 +1242,25 @@
+@@ -1179,7 +1244,25 @@
  				jcell.updatePortPositions(nest, GraphConstants.getIcon(attr), cellDimension);
  				graph.getGraphLayoutCache().edit(nest);
  			}
@@ -2031,7 +2215,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Blocking region editing
  		else if ((cell != null) && (cell instanceof BlockingRegion)) {
  			Object regionKey = ((BlockingRegion) cell).getKey();
-@@ -1290,11 +1371,33 @@
+@@ -1290,11 +1373,33 @@
  
  		if (!edges.isEmpty()) {
  			// Removes edges from graph
@@ -2068,7 +2252,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// Checks if all children of a blocking region have been removed
  		Iterator<Object> it = regions.iterator();
  		while (it.hasNext()) {
-@@ -1333,10 +1436,34 @@
+@@ -1333,10 +1438,34 @@
  				model.deleteStation(((CellComponent) ((JmtCell) cell).getUserObject()).getKey());
  			} else if (cell instanceof JmtEdge) {
  				JmtEdge link = (JmtEdge) cell;
@@ -2103,7 +2287,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		// If no stations remains gray select and link buttons
  		if (graphmodel.getRootCount() == 0) {
  			componentBar.clearButtonGroupSelection(0);
-@@ -1343,6 +1470,7 @@
+@@ -1343,6 +1472,7 @@
  			setConnect.setEnabled(false);
  			setSelect.setEnabled(false);
  			actionSetRight.setEnabled(false);
@@ -2111,7 +2295,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -2884,14 +3012,21 @@
+@@ -2884,14 +3014,21 @@
  			JmtCell current = (JmtCell) cell;
  			Map<Object, Map> nested = new Hashtable<Object, Map>();
  			Map attributeMap = new Hashtable();
@@ -2135,7 +2319,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			nested.put(cell, attributeMap);
  			current.setLeftInputCell(!current.isLeftInputCell());
  			current.updatePortPositions(nested, icon, current.getSize(graph));
-@@ -2952,7 +3087,9 @@
+@@ -2952,7 +3089,9 @@
  		List<Object> max = new ArrayList<Object>();
  
  		cells = graph.getDescendants(graph.getRoots());
@@ -2145,7 +2329,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		for (int i = 0; i < cells.length; i++) {
  			if (cells[i] instanceof JmtCell) {
  				Rectangle bounds = GraphConstants.getBounds(((JmtCell) cells[i]).getAttributes()).getBounds();
-@@ -2965,9 +3102,14 @@
+@@ -2965,9 +3104,14 @@
  				if (!((JmtCell) cells[i]).isLeftInputCell()) {
  					rotateComponent(new Object[] { cells[i] });
  				}
@@ -2160,7 +2344,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		boolean sourceIn = false;
  		for (int i = 0; i < cells.length; i++) {
  			if (cells[i] instanceof JmtCell) {
-@@ -3089,7 +3231,11 @@
+@@ -3089,7 +3233,11 @@
  						- (int) (boundspadre.getHeight() / 2) + 30);
  			}
  
@@ -2173,7 +2357,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			x = (int) boundspadre.getCenterX() + widthMax + 50;
  			prev.seen = true;
  			flag2 = true;
-@@ -3121,7 +3267,10 @@
+@@ -3121,7 +3269,10 @@
  			Rectangle bounds = GraphConstants.getBounds(((JmtCell) next.get(0)).getAttributes()).getBounds();
  			bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  					(int) boundspadre.getCenterY() - (int) (bounds.getHeight() / 2));
@@ -2185,7 +2369,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  
  			((JmtCell) next.get(0)).seen = true;
  			j = searchNext((JmtCell) next.get(0));
-@@ -3160,8 +3309,12 @@
+@@ -3160,8 +3311,12 @@
  				Rectangle bounds = GraphConstants.getBounds(((JmtCell) sons.get(i)).getAttributes()).getBounds();
  				bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  						w - (int) (bounds.getHeight() / 2) + 80);
@@ -2199,7 +2383,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  				((JmtCell) sons.get(i)).seen = true;
  				listEdges = DefaultGraphModel.getOutgoingEdges(graphmodel, sons.get(i));
  
-@@ -3324,6 +3477,7 @@
+@@ -3324,6 +3479,7 @@
  			setConnect.setEnabled(false);
  			setSelect.setEnabled(false);
  			actionSetRight.setEnabled(false);
@@ -2207,7 +2391,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -3349,4 +3503,228 @@
+@@ -3349,4 +3505,228 @@
  		}
  	}
  
