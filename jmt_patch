@@ -709,7 +709,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
  			//nel caso di lati che vanno nel verso oposto
 -			if ((tmpMin.getX() > tmpMax.getX()) || (tmpMin.getY() > tmpMax.getY())) {
 +			// Modified by Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio to take into account multi arrows that can have +-1 difference pixels
-+			if ((Math.abs(tmpMax.getX() - tmpMin.getX()) > 1 && (tmpMin.getX()) > tmpMax.getX()) || (Math.abs(tmpMax.getY() - tmpMin.getY()) > 1 && tmpMin.getY() > tmpMax.getY())) {
++			if ((Math.abs(tmpMax.getX() - tmpMin.getX()) > 2 && (tmpMin.getX()) > tmpMax.getX()) || (Math.abs(tmpMax.getY() - tmpMin.getY()) > 2 && tmpMin.getY() > tmpMax.getY())) {
  				tmpMin = controlPoints[i + 1];
  				tmpMax = controlPoints[i];
  			}
@@ -1772,7 +1772,15 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java	(revision 978)
 +++ src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java	(working copy)
-@@ -64,7 +64,9 @@
+@@ -27,6 +27,7 @@
+ 
+ import jmt.gui.jsimgraph.JGraphMod.JmtCell;
+ 
++import jmt.gui.jsimgraph.JGraphMod.OutputPort;
+ import org.jgraph.graph.PortView;
+ import org.jgraph.graph.VertexView;
+ 
+@@ -64,7 +65,9 @@
  	public void handlePress(MouseEvent e) {
  		if (!e.isConsumed()) {
  			start = mediator.snap(e.getPoint());
@@ -1783,18 +1791,32 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
  			if (firstPort != null) {
  				start = mediator.toScreen(firstPort.getLocation(null));
  			}
-@@ -113,7 +115,9 @@
+@@ -112,8 +115,10 @@
+ 	// Heavily modified by Giuseppe De Cicco & Fabio Granara
  	@Override
  	public void handleRelease(MouseEvent e) {
- 		if (e != null && !e.isConsumed()) {
+-		if (e != null && !e.isConsumed()) {
 -			PortView end = getInPortViewAt(e.getX(), e.getY());
++		if (e != null && !e.isConsumed() && firstPort != null) {
 +			// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
 +			// Request a (possibly new) free input port
 +			PortView end = getFreeInPortViewAt(e.getX(), e.getY());
  			if (end != null) {
  				mediator.connect(start, current, end, firstPort);
  				if ((firstPort != null) && ((VertexView) (firstPort.getParentView()) != null)) {
-@@ -133,6 +137,17 @@
+@@ -123,6 +128,11 @@
+ 					}
+ 				}
+ 				mediator.getGraph().getGraphLayoutCache().reload();
++			} else {
++				OutputPort outputPort = (OutputPort) firstPort.getCell();
++				JmtCell source = (JmtCell) outputPort.getParent();
++				source.SubOut();
++				source.remove(outputPort);
+ 			}
+ 			e.consume();
+ 			mediator.graphRepaint();
+@@ -133,6 +143,17 @@
  		current = null;
  	}
  
@@ -1812,7 +1834,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/ConnectState.java
  	/** gets the first portView of the input port of the cell at position
  	 *
  	 * @param x
-@@ -153,6 +168,17 @@
+@@ -153,6 +174,17 @@
  		return mediator.getOutPortViewAt(x, y);
  	}
  
@@ -2295,6 +2317,42 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
+@@ -1676,7 +1806,7 @@
+ 							if (((JmtEdge) overlapping[j]).getSource() != cell.getChildAt(0)) {
+ 								ArrayList<Point2D> intersectionPoints = ((JmtEdge) overlapping[j]).getIntersectionVertexPoint();
+ 								Point2D tmp = (intersectionPoints.get(0));
+-								Rectangle2D cellBound = GraphConstants.getBounds(((SourceCell) cell).getAttributes());
++								Rectangle2D cellBound = bounds; // GraphConstants.getBounds(((SourceCell) cell).getAttributes());
+ 								double vertexMaxX = (int) cellBound.getMaxX();
+ 								double vertexMaxY = (int) cellBound.getMaxY();
+ 								double vertexHeight = (int) cellBound.getHeight();
+@@ -1737,7 +1867,7 @@
+ 										GraphConstants.getBounds(((SinkCell) cell).getAttributes()))) {
+ 									ArrayList<Point2D> intersectionPoints = ((JmtEdge) overlapping[j]).getIntersectionVertexPoint();
+ 									Point2D tmp = (intersectionPoints.get(0));
+-									Rectangle2D cellBound = GraphConstants.getBounds(((SinkCell) cell).getAttributes());
++									Rectangle2D cellBound = bounds; // GraphConstants.getBounds(((SinkCell) cell).getAttributes());
+ 									double vertexMaxX = (int) cellBound.getMaxX();
+ 									double vertexMaxY = (int) cellBound.getMaxY();
+ 									double vertexHeight = (int) cellBound.getHeight();
+@@ -1794,7 +1924,7 @@
+ 						}
+ 
+ 						if (!isInGroup(overlapping[j]) && !access && !access2 && overlapping[j] instanceof JmtEdge) {
+-							if ((numberOfChild == 2)
++							if ((numberOfChild >= 2)
+ 									&& ((JmtEdge) overlapping[j]).getSource() != cell.getChildAt(0)
+ 									&& ((JmtEdge) overlapping[j]).getSource() != cell.getChildAt(1)
+ 									&& ((JmtEdge) overlapping[j]).getTarget() != cell.getChildAt(0)
+@@ -1810,7 +1940,7 @@
+ 									return;
+ 								} else {
+ 									Point2D tmp = (intersectionPoints.get(0));
+-									Rectangle2D cellBound = GraphConstants.getBounds(cell.getAttributes());
++									Rectangle2D cellBound = bounds; //GraphConstants.getBounds(cell.getAttributes());
+ 									double vertexMaxX = (int) cellBound.getMaxX();
+ 									double vertexMaxY = (int) cellBound.getMaxY();
+ 									double vertexHeight = (int) cellBound.getHeight();
 @@ -2884,14 +3014,21 @@
  			JmtCell current = (JmtCell) cell;
  			Map<Object, Map> nested = new Hashtable<Object, Map>();
