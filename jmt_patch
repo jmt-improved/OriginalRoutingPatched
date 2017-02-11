@@ -2317,7 +2317,31 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -1676,7 +1806,7 @@
+@@ -1504,9 +1634,23 @@
+ 		// whether the Position is Null, the application call the reposition's method
+ 		if (!containPosition) {
+ 			adjustGraph();
++		} else {
++			Object[] objCells = graph.getDescendants(graph.getRoots());
++			Integer[] Xmin = new Integer[objCells.length];
++			Integer[] Ymin = new Integer[objCells.length];
++			for(int i = 0; i < objCells.length; i++) {
++				if (objCells[i] instanceof JmtCell) {
++					Rectangle2D rett = GraphConstants.getBounds(((JmtCell) objCells[i]).getAttributes());
++					Xmin[i] = (int) rett.getMinX();
++					Ymin[i] = (int) rett.getMinY();
++				}
++			}
++			putSelectedCellsInGoodPlace(objCells, Xmin, Ymin);
++
+ 		}
+ 		graphRepaint();
+ 		graph.getGraphLayoutCache().reload();
++
+ 	}
+ 
+ 	/**
+@@ -1676,7 +1820,7 @@
  							if (((JmtEdge) overlapping[j]).getSource() != cell.getChildAt(0)) {
  								ArrayList<Point2D> intersectionPoints = ((JmtEdge) overlapping[j]).getIntersectionVertexPoint();
  								Point2D tmp = (intersectionPoints.get(0));
@@ -2326,7 +2350,93 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  								double vertexMaxX = (int) cellBound.getMaxX();
  								double vertexMaxY = (int) cellBound.getMaxY();
  								double vertexHeight = (int) cellBound.getHeight();
-@@ -1737,7 +1867,7 @@
+@@ -1690,11 +1834,19 @@
+ 									if ((int) tmp.getX() < valoreIntermedio) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, true, false);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									} else {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, false, true);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									}
+ 								} else if (leftSideIntersaction && rightSideIntersaction) {
+ 									int valoreIntermedio = ((int) vertexMaxY - (int) (vertexHeight / 2));
+@@ -1701,31 +1853,55 @@
+ 									if ((int) tmp.getY() < valoreIntermedio) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, true, false, false);
+-										Point newPosition2 = new Point(newPosition.x, newPosition.y + sp);
+-										bounds.setLocation(newPosition2);
+-										sp = sp + 2;
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											Point newPosition2 = new Point(newPosition.x, newPosition.y + sp);
++											bounds.setLocation(newPosition2);
++											sp = sp + 2;
++										}
+ 									} else {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												true, false, false, false);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									}
+ 								} else if (upperSideIntersaction && rightSideIntersaction) {
+ 									Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp, false,
+ 											false, false, true);
+-									bounds.setLocation(newPosition);
++									if (newPosition.equals(bounds.getLocation())) {
++										bounds.setLocation(x, y);
++									} else {
++										bounds.setLocation(newPosition);
++									}
+ 								} else if (upperSideIntersaction && leftSideIntersaction) {
+ 									Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp, false,
+ 											false, true, false);
+-									bounds.setLocation(newPosition);
++									if (newPosition.equals(bounds.getLocation())) {
++										bounds.setLocation(x, y);
++									} else {
++										bounds.setLocation(newPosition);
++									}
+ 								} else if (lowerSideIntersaction && rightSideIntersaction) {
+ 									Point2D tmp1 = (intersectionPoints.get(1));
+ 									Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp1, false,
+ 											false, false, true);
+-									bounds.setLocation(newPosition);
++									if (newPosition.equals(bounds.getLocation())) {
++										bounds.setLocation(x, y);
++									} else {
++										bounds.setLocation(newPosition);
++									}
+ 								} else if (lowerSideIntersaction && leftSideIntersaction) {
+ 									Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp, false,
+ 											false, true, false);
+-									bounds.setLocation(newPosition);
++									if (newPosition.equals(bounds.getLocation())) {
++										bounds.setLocation(x, y);
++									} else {
++										bounds.setLocation(newPosition);
++									}
+ 								}
+ 								access = true;
+ 							}
+@@ -1737,7 +1913,7 @@
  										GraphConstants.getBounds(((SinkCell) cell).getAttributes()))) {
  									ArrayList<Point2D> intersectionPoints = ((JmtEdge) overlapping[j]).getIntersectionVertexPoint();
  									Point2D tmp = (intersectionPoints.get(0));
@@ -2335,7 +2445,93 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  									double vertexMaxX = (int) cellBound.getMaxX();
  									double vertexMaxY = (int) cellBound.getMaxY();
  									double vertexHeight = (int) cellBound.getHeight();
-@@ -1794,7 +1924,7 @@
+@@ -1751,11 +1927,19 @@
+ 										if ((int) tmp.getX() < valoreIntermedio) {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													false, false, true, false);
+-											bounds.setLocation(newPosition);
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												bounds.setLocation(newPosition);
++											}
+ 										} else {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													false, false, false, true);
+-											bounds.setLocation(newPosition);
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												bounds.setLocation(newPosition);
++											}
+ 										}
+ 									} else if (leftSideIntersaction && rightSideIntersaction) {
+ 										int valoreIntermedio = ((int) vertexMaxY - (int) (vertexHeight / 2));
+@@ -1762,31 +1946,55 @@
+ 										if ((int) tmp.getY() < valoreIntermedio) {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													false, true, false, false);
+-											Point newPosition2 = new Point(newPosition.x, newPosition.y + sp);
+-											bounds.setLocation(newPosition2);
+-											sp = sp + 3;
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												Point newPosition2 = new Point(newPosition.x, newPosition.y + sp);
++												bounds.setLocation(newPosition2);
++												sp = sp + 3;
++											}
+ 										} else {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													true, false, false, false);
+-											bounds.setLocation(newPosition);
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												bounds.setLocation(newPosition);
++											}
+ 										}
+ 									} else if (upperSideIntersaction && rightSideIntersaction) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, false, true);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									} else if (upperSideIntersaction && leftSideIntersaction) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, true, false);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									} else if (lowerSideIntersaction && rightSideIntersaction) {
+ 										Point2D tmp1 = (intersectionPoints.get(1));
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp1,
+ 												false, false, false, true);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									} else if (lowerSideIntersaction && leftSideIntersaction) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, true, false);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									}
+ 									access2 = true;
+ 								}
+@@ -1794,7 +2002,7 @@
  						}
  
  						if (!isInGroup(overlapping[j]) && !access && !access2 && overlapping[j] instanceof JmtEdge) {
@@ -2344,7 +2540,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  									&& ((JmtEdge) overlapping[j]).getSource() != cell.getChildAt(0)
  									&& ((JmtEdge) overlapping[j]).getSource() != cell.getChildAt(1)
  									&& ((JmtEdge) overlapping[j]).getTarget() != cell.getChildAt(0)
-@@ -1810,7 +1940,7 @@
+@@ -1810,7 +2018,7 @@
  									return;
  								} else {
  									Point2D tmp = (intersectionPoints.get(0));
@@ -2353,7 +2549,93 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  									double vertexMaxX = (int) cellBound.getMaxX();
  									double vertexMaxY = (int) cellBound.getMaxY();
  									double vertexHeight = (int) cellBound.getHeight();
-@@ -2884,14 +3014,21 @@
+@@ -1824,11 +2032,19 @@
+ 										if ((int) tmp.getX() < valoreIntermedio) {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													false, false, true, false);
+-											bounds.setLocation(newPosition);
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												bounds.setLocation(newPosition);
++											}
+ 										} else {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													false, false, false, true);
+-											bounds.setLocation(newPosition);
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												bounds.setLocation(newPosition);
++											}
+ 										}
+ 									} else if (leftSideIntersaction && rightSideIntersaction) {
+ 										int valoreIntermedio = ((int) vertexMaxY - (int) (vertexHeight / 2));
+@@ -1835,31 +2051,55 @@
+ 										if ((int) tmp.getY() < valoreIntermedio) {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													false, true, false, false);
+-											Point newPosition2 = new Point(newPosition.x, newPosition.y + sp);
+-											bounds.setLocation(newPosition2);
+-											sp = sp + 3;
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												Point newPosition2 = new Point(newPosition.x, newPosition.y + sp);
++												bounds.setLocation(newPosition2);
++												sp = sp + 3;
++											}
+ 										} else {
+ 											Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 													true, false, false, false);
+-											bounds.setLocation(newPosition);
++											if (newPosition.equals(bounds.getLocation())) {
++												bounds.setLocation(x, y);
++											} else {
++												bounds.setLocation(newPosition);
++											}
+ 										}
+ 									} else if (upperSideIntersaction && rightSideIntersaction) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, false, true);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									} else if (upperSideIntersaction && leftSideIntersaction) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, true, false);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									} else if (lowerSideIntersaction && rightSideIntersaction) {
+ 										Point2D tmp1 = (intersectionPoints.get(1));
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp1,
+ 												false, false, false, true);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									} else if (lowerSideIntersaction && leftSideIntersaction) {
+ 										Point newPosition = (this.overlapping).findFreePosition(((JmtEdge) overlapping[j]), cell, cellBound, tmp,
+ 												false, false, true, false);
+-										bounds.setLocation(newPosition);
++										if (newPosition.equals(bounds.getLocation())) {
++											bounds.setLocation(x, y);
++										} else {
++											bounds.setLocation(newPosition);
++										}
+ 									}
+ 								}
+ 							}
+@@ -2884,14 +3124,21 @@
  			JmtCell current = (JmtCell) cell;
  			Map<Object, Map> nested = new Hashtable<Object, Map>();
  			Map attributeMap = new Hashtable();
@@ -2377,7 +2659,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			nested.put(cell, attributeMap);
  			current.setLeftInputCell(!current.isLeftInputCell());
  			current.updatePortPositions(nested, icon, current.getSize(graph));
-@@ -2952,7 +3089,9 @@
+@@ -2952,7 +3199,9 @@
  		List<Object> max = new ArrayList<Object>();
  
  		cells = graph.getDescendants(graph.getRoots());
@@ -2387,7 +2669,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		for (int i = 0; i < cells.length; i++) {
  			if (cells[i] instanceof JmtCell) {
  				Rectangle bounds = GraphConstants.getBounds(((JmtCell) cells[i]).getAttributes()).getBounds();
-@@ -2965,9 +3104,14 @@
+@@ -2965,9 +3214,14 @@
  				if (!((JmtCell) cells[i]).isLeftInputCell()) {
  					rotateComponent(new Object[] { cells[i] });
  				}
@@ -2402,7 +2684,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		boolean sourceIn = false;
  		for (int i = 0; i < cells.length; i++) {
  			if (cells[i] instanceof JmtCell) {
-@@ -3089,7 +3233,11 @@
+@@ -3089,7 +3343,11 @@
  						- (int) (boundspadre.getHeight() / 2) + 30);
  			}
  
@@ -2415,7 +2697,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  			x = (int) boundspadre.getCenterX() + widthMax + 50;
  			prev.seen = true;
  			flag2 = true;
-@@ -3121,7 +3269,10 @@
+@@ -3121,7 +3379,10 @@
  			Rectangle bounds = GraphConstants.getBounds(((JmtCell) next.get(0)).getAttributes()).getBounds();
  			bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  					(int) boundspadre.getCenterY() - (int) (bounds.getHeight() / 2));
@@ -2427,7 +2709,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  
  			((JmtCell) next.get(0)).seen = true;
  			j = searchNext((JmtCell) next.get(0));
-@@ -3160,8 +3311,12 @@
+@@ -3160,8 +3421,12 @@
  				Rectangle bounds = GraphConstants.getBounds(((JmtCell) sons.get(i)).getAttributes()).getBounds();
  				bounds.setLocation((int) (boundspadre.getCenterX()) + widthMax + 50 - (int) (bounds.getWidth() / 2),
  						w - (int) (bounds.getHeight() / 2) + 80);
@@ -2441,7 +2723,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  				((JmtCell) sons.get(i)).seen = true;
  				listEdges = DefaultGraphModel.getOutgoingEdges(graphmodel, sons.get(i));
  
-@@ -3324,6 +3479,7 @@
+@@ -3324,6 +3589,7 @@
  			setConnect.setEnabled(false);
  			setSelect.setEnabled(false);
  			actionSetRight.setEnabled(false);
@@ -2449,7 +2731,7 @@ Index: src/main/java/jmt/gui/jsimgraph/controller/Mediator.java
  		}
  
  		// Selects components from removed blocking regions
-@@ -3349,4 +3505,228 @@
+@@ -3349,4 +3615,228 @@
  		}
  	}
  
