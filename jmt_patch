@@ -664,6 +664,19 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtCell.java
 +     */
 +    public abstract String getIcon();
  }
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtDefaultCellViewFactory.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtDefaultCellViewFactory.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtDefaultCellViewFactory.java	(working copy)
+@@ -20,6 +20,8 @@
+ import jmt.gui.jsimgraph.controller.Mediator;
+ 
+ import org.jgraph.graph.DefaultCellViewFactory;
++import org.jgraph.graph.Port;
++import org.jgraph.graph.PortView;
+ 
+ /**
+  * <p>Title: JmtDefaultCellViewFactory </p>
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdge.java	(revision 978)
@@ -802,7 +815,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  								if (cell.isRing && i == 4) {
  									//	  	        			   System.out.println("____________ENTRATO NEL RING____________");
 -									if ((int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
-+									if (Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
++									if (Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 2
  											&& (((int) p[i].getX() < (int) ((cell.intersectionEdgePoint.get(j))).getX()))) {
  										int intersectionPoint = (int) ((cell.intersectionEdgePoint.get(j))).getX();
  
@@ -811,7 +824,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  											view.sharedPath.moveTo((float) (p[5].getX()), (float) (p[5]).getY());
  										}
 -									} else if ((int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
-+									} else if (Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
++									} else if (Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 2
  											&& (((int) p[i].getX() > (int) ((cell.intersectionEdgePoint.get(j))).getX()))) {
  										int intersectionPoint = (int) ((cell.intersectionEdgePoint.get(j))).getX();
  										if ((p[5].getX() < p[4].getX()) && (intersectionPoint > ((int) p[5].getX()))) {
@@ -821,8 +834,8 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  								} else {
 -									if ((int) p[i + 1].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
 -											&& (int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
-+									if (Math.abs((int) p[i + 1].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
-+											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
++									if (Math.abs((int) p[i + 1].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 2
++											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 2
  											&& (((int) p[i].getX() < (int) ((cell.intersectionEdgePoint.get(j))).getX()))
  											&& (((int) p[i + 1].getX() > (int) ((cell.intersectionEdgePoint.get(j))).getX()))) {
  
@@ -831,7 +844,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  												&& (((cell.intersectionEdgePoint.get(j + 1))).getX() > ((cell.intersectionEdgePoint.get(j))).getX())
  												&& (((cell.intersectionEdgePoint.get(j + 1))).getX() - ((cell.intersectionEdgePoint.get(j))).getX() < 10)
 -												&& ((cell.intersectionEdgePoint.get(j))).getY() == ((cell.intersectionEdgePoint.get(j + 1))).getY()) {
-+												&& Math.abs(((cell.intersectionEdgePoint.get(j))).getY() - ((cell.intersectionEdgePoint.get(j + 1))).getY()) <= 1) {
++												&& Math.abs(((cell.intersectionEdgePoint.get(j))).getY() - ((cell.intersectionEdgePoint.get(j + 1))).getY()) <= 2) {
  											double middleX = (((cell.intersectionEdgePoint.get(j + 1))).getX() + ((cell.intersectionEdgePoint.get(j)))
  													.getX()) / 2;
  
@@ -840,10 +853,10 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  									else if (((passato == false) || ((passato == true) && (tmp1.size() > 0) && (!tmp1
  											.contains(cell.intersectionEdgePoint.get(j)))))
 -											&& (int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
-+											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
++											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 2
  											&& (((int) p[i].getX() > (int) p[i + 1].getX()))
 -											&& (int) p[i].getY() == (int) ((cell.intersectionEdgePoint.get(j))).getY()
-+											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 1
++											&& Math.abs((int) p[i].getY() - (int) ((cell.intersectionEdgePoint.get(j))).getY()) <= 2
  											&& (int) p[i + 1].getX() < (int) ((cell.intersectionEdgePoint.get(j))).getX()) {
  										//	  	        			   System.out.println("Entratooooooooooooooooooooooooo in elseif");
  										//questo if serve per fare un grande arco quando ci sono due punti di int. vicini
@@ -852,7 +865,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  										int contatore = 0;
  										for (int q = 0; q < cell.intersectionEdgePoint.size(); q++) {
 -											if ((cell.intersectionEdgePoint.get(q)).getY() == (cell.intersectionEdgePoint.get(j)).getY()) {
-+											if (Math.abs((cell.intersectionEdgePoint.get(q)).getY() - (cell.intersectionEdgePoint.get(j)).getY()) <= 1) {
++											if (Math.abs((cell.intersectionEdgePoint.get(q)).getY() - (cell.intersectionEdgePoint.get(j)).getY()) <= 2) {
  												tmp1.add((cell.intersectionEdgePoint.get(q)).clone());
  												//	  	        	 			cell.intersectionEdgePoint.remove(((Point2D)cell.intersectionEdgePoint.get(q)));
  												contatore++;
@@ -861,7 +874,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  											} else {
  
 -												if ((int) p[i].getY() == (int) ((Point2D) (tmp1.get(x))).getY()) {
-+												if (Math.abs((int) p[i].getY() - (int) ((Point2D) (tmp1.get(x))).getY()) <= 1) {
++												if (Math.abs((int) p[i].getY() - (int) ((Point2D) (tmp1.get(x))).getY()) <= 2) {
  													view.sharedPath.lineTo((float) ((Point2D) (tmp1.get(x))).getX() + 5, (float) ((Point2D) (tmp1
  															.get(x))).getY());
  													view.sharedPath.moveTo((float) ((Point2D) (tmp1.get(x))).getX() + 5, (float) ((Point2D) (tmp1
@@ -870,10 +883,10 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  							for (int j = 0; j < pointOnFirstPoints.size(); j++) {
  								if ((p[1].getX() - p[0].getX()) > 0) {
 -									if ((int) p[0].getY() == (int) ((Point2D) (pointOnFirstPoints.get(j))).getY()) {
-+									if (Math.abs((int) p[0].getY() - (int) ((Point2D) (pointOnFirstPoints.get(j))).getY()) <= 1) {
++									if (Math.abs((int) p[0].getY() - (int) ((Point2D) (pointOnFirstPoints.get(j))).getY()) <= 2) {
  										//	  		            			 System.out.println("entro per sistemare il punto zero in jmtedgerenderer");
 -										if ((p[0].getY() == ((Point2D) pointOnFirstPoints.get(j)).getY())
-+										if (Math.abs((p[0].getY() - ((Point2D) pointOnFirstPoints.get(j)).getY())) <= 1
++										if (Math.abs((p[0].getY() - ((Point2D) pointOnFirstPoints.get(j)).getY())) <= 2
  												&& ((int) p[0].getX() < (int) ((Point2D) (pointOnFirstPoints.get(j))).getX())
  												&& (int) ((Point2D) (pointOnFirstPoints.get(j))).getX() < (int) p[1].getX()) {
  											//	  		            					c'era 20 e non 10  
@@ -884,7 +897,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
 -													&& ((Point2D) (pointOnFirstPoints.get(j))).getY() == ((Point2D) (pointOnFirstPoints.get(j + 1)))
 -															.getY()) {
 +													&& Math.abs(((Point2D) (pointOnFirstPoints.get(j))).getY() - ((Point2D) (pointOnFirstPoints.get(j + 1)))
-+															.getY()) <= 1) {
++															.getY()) <= 2) {
  												double middleX = (((Point2D) (pointOnFirstPoints.get(j + 1))).getX() + ((Point2D) (pointOnFirstPoints
  														.get(j))).getX()) / 2;
  
@@ -893,10 +906,71 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeRenderer.java
  									boolean arcogrande = false;
  									//	  		            			System.out.println("Sono uguali di y: "+(((Point2D)cell.intersectionEdgePoint.get(cell.intersectionEdgePoint.size()-j-1)).getY()==(int)p[0].getY())+"Coordinata x del punto 0: "+p[0].getX()+"Punto di int: "+((Point2D)cell.intersectionEdgePoint.get(cell.intersectionEdgePoint.size()-j-1)).getX());
 -									if (((int) p[0].getY() == (int) ((Point2D) pointOnFirstPoints.get(j)).getY())
-+									if (Math.abs((int) p[0].getY() -(int) ((Point2D) pointOnFirstPoints.get(j)).getY()) <= 1
++									if (Math.abs((int) p[0].getY() -(int) ((Point2D) pointOnFirstPoints.get(j)).getY()) <= 2
  											&& (((int) p[0].getX() > (int) ((Point2D) (pointOnFirstPoints.get(j))).getX()) && (int) ((Point2D) (pointOnFirstPoints
  													.get(j))).getX() > (int) p[1].getX())) {
  										if (((j + 1) < pointOnFirstPoints.size())
+Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeView.java
+===================================================================
+--- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeView.java	(revision 978)
++++ src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtEdgeView.java	(working copy)
+@@ -19,11 +19,11 @@
+ 
+ import java.awt.Shape;
+ import java.awt.geom.GeneralPath;
++import java.awt.geom.Point2D;
+ 
+ import jmt.gui.jsimgraph.controller.Mediator;
+ 
+-import org.jgraph.graph.CellViewRenderer;
+-import org.jgraph.graph.EdgeView;
++import org.jgraph.graph.*;
+ 
+ /**
+  * <p>Title: JmtEdgeView </p>
+@@ -60,10 +60,41 @@
+ 
+ 	@Override
+ 	public CellViewRenderer getRenderer() {
+-
+ 		return renderer;
+ 	}
+ 
++	// Fioratto Raffaele, Pellizzari Filippo, Cardinale Claudio
++	// Tries to adjust port offsets in order to compensate some slight differences between y coordinates of horizontal segments
++	@Override
++	public void refresh(GraphModel graphModel, CellMapper cellMapper, boolean b) {
++		super.refresh(graphModel, cellMapper, b);
++		if (this.getPointCount() >= 4) {
++			int pointCount = this.getPointCount();
++
++			if (this.getPoint(0) != null && this.getPoint(1) != null && (this.getPoint(0).getY() != this.getPoint(1).getY())) {
++				double beforeY = this.getPoint(0).getY();
++				Point2D.Double offset = (Point2D.Double) this.getSource().getAllAttributes().get("offset");
++				offset.setLocation(offset.getX(), offset.getY() + 1);
++				double afterY = this.getPoint(0).getY();
++				double stepY = Math.round((afterY - beforeY) * 1000.0) / 1000.0;
++				double diffY = Math.abs(afterY - this.getPoint(1).getY());
++				double stepYOffset = diffY / stepY;
++				offset.setLocation(offset.getX(), offset.getY() + (this.getPoint(0).getY() > this.getPoint(1).getY() ? -1 : 1) * stepYOffset);
++			}
++
++			if (this.getPoint(pointCount - 1) != null && this.getPoint(pointCount - 2) != null && (this.getPoint(pointCount - 1).getY() != this.getPoint(pointCount - 2).getY())) {
++				double beforeY = this.getPoint(pointCount - 1).getY();
++				Point2D.Double offset = (Point2D.Double) this.getTarget().getAllAttributes().get("offset");
++				offset.setLocation(offset.getX(), offset.getY() + 1);
++				double afterY = this.getPoint(pointCount - 1).getY();
++				double stepY = Math.round((afterY - beforeY) * 1000.0) / 1000.0;
++				double diffY = Math.abs(afterY - this.getPoint(pointCount - 2).getY());
++				double stepYOffset = diffY / stepY;
++				offset.setLocation(offset.getX(), offset.getY() + (this.getPoint(pointCount - 1).getY() > this.getPoint(pointCount - 2).getY() ? -1 : 1) * stepYOffset);
++			}
++		}
++	}
++
+ 	// Giuseppe De Cicco & Fabio Granara
+ 	@Override
+ 	public Shape getShape() {
 Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java
 ===================================================================
 --- src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtJGraph.java	(revision 978)
@@ -1282,7 +1356,7 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
  						routed[1] = new Point2D.Double(routed[0].getX(), maxY);
  						routed[2] = new Point2D.Double(routed[3].getX(), maxY);
  
-@@ -238,18 +385,467 @@
+@@ -238,18 +385,469 @@
  					}
  				}
  			}
@@ -1743,7 +1817,9 @@ Index: src/main/java/jmt/gui/jsimgraph/JGraphMod/JmtRouting.java
 +			Collections.addAll(list, routed);
 +			list.add(new Point2D.Double(to.getX(), finalY));
 +			edge.setRoutedPoints(list);
++			//GraphConstants.setPoints(edgeView.getAttributes(), list);
  		}
++
  		return list;
  	}
  
